@@ -7,7 +7,6 @@ namespace QuantityMeasurementApp.PresentationLayer
 {
     /// <summary>
     /// UC7: Presentation layer for Length addition with explicit target unit.
-    /// /// UC7: Presentation layer for Length addition with explicit target unit.
     /// The user specifies both operands and a target unit.
     /// The result is returned directly in the requested target unit.
     /// </summary>

@@ -32,7 +32,7 @@ namespace QuantityMeasurementApp
             // UC10
             var quantityUI       = new QuantityPresentation();
             // UC11
-            var volumeUI         = new VolumePresentationUC11();
+            var volumeUI         = new VolumePresentation();
 
             while (true)
             {
