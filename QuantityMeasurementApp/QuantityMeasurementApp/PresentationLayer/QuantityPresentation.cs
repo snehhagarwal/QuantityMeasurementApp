@@ -24,23 +24,19 @@ namespace QuantityMeasurementApp.PresentationLayer
     {
         private readonly ILengthService _lengthService;
         private readonly IWeightService _weightService;
-        private readonly IVolumeService _volumeService;
 
         public QuantityPresentation()
         {
             _lengthService = new LengthService();
             _weightService = new WeightService();
-            _volumeService = new VolumeService();
         }
 
         /// <summary>ASP.NET-ready constructor — accepts all services via dependency injection.</summary>
         public QuantityPresentation(ILengthService lengthService,
-                                    IWeightService weightService,
-                                    IVolumeService volumeService)
+                                    IWeightService weightService)
         {
             _lengthService = lengthService;
             _weightService = weightService;
-            _volumeService = volumeService;
         }
 
         public void Run()
@@ -196,48 +192,6 @@ namespace QuantityMeasurementApp.PresentationLayer
                 if (!string.IsNullOrWhiteSpace(targetRaw))
                 {
                     var sumTarget = DemonstrateAddition(q1, q2, new WeightUnitMeasurable(ParseWeightUnit(targetRaw)));
-                    Console.WriteLine($"Sum in target unit ({sumTarget.Unit.GetUnitName()}): {sumTarget}");
-                }
-            }
-            else { Console.WriteLine("Invalid operation"); }
-        }
-
-        private void RunGenericVolume(int op)
-        {
-            Console.Write("First value: ");
-            double v1 = Convert.ToDouble(Console.ReadLine());
-            Console.Write("First unit (LITRE/MILLILITRE/GALLON): ");
-            var q1 = new Quantity<VolumeUnitMeasurable>(v1, new VolumeUnitMeasurable(ParseVolumeUnit(Console.ReadLine())));
-
-            if (op == 1)
-            {
-                Console.Write("Second value: ");
-                double v2 = Convert.ToDouble(Console.ReadLine());
-                Console.Write("Second unit (LITRE/MILLILITRE/GALLON): ");
-                var q2 = new Quantity<VolumeUnitMeasurable>(v2, new VolumeUnitMeasurable(ParseVolumeUnit(Console.ReadLine())));
-                Console.WriteLine($"\nResult: {q1} == {q2} -> {DemonstrateEquality(q1, q2)}");
-            }
-            else if (op == 2)
-            {
-                Console.Write("Target unit (LITRE/MILLILITRE/GALLON): ");
-                var result = DemonstrateConversion(q1, new VolumeUnitMeasurable(ParseVolumeUnit(Console.ReadLine())));
-                Console.WriteLine($"\nResult: {q1} -> {result}");
-            }
-            else if (op == 3)
-            {
-                Console.Write("Second value: ");
-                double v2 = Convert.ToDouble(Console.ReadLine());
-                Console.Write("Second unit (LITRE/MILLILITRE/GALLON): ");
-                var q2 = new Quantity<VolumeUnitMeasurable>(v2, new VolumeUnitMeasurable(ParseVolumeUnit(Console.ReadLine())));
-
-                var sumFirst = DemonstrateAddition(q1, q2, q1.Unit);
-                Console.WriteLine($"\nSum in first unit ({q1.Unit.GetUnitName()}): {q1} + {q2} = {sumFirst}");
-
-                Console.Write("\nEnter target unit (LITRE/MILLILITRE/GALLON), or ENTER to skip: ");
-                string? targetRaw = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(targetRaw))
-                {
-                    var sumTarget = DemonstrateAddition(q1, q2, new VolumeUnitMeasurable(ParseVolumeUnit(targetRaw)));
                     Console.WriteLine($"Sum in target unit ({sumTarget.Unit.GetUnitName()}): {sumTarget}");
                 }
             }
@@ -440,15 +394,6 @@ namespace QuantityMeasurementApp.PresentationLayer
             if (text == "G"  || text == "GRAM"       || text == "GRAMS")     return WeightUnit.GRAM;
             if (text == "LB" || text == "LBS" || text == "POUND" || text == "POUNDS") return WeightUnit.POUND;
             throw new ArgumentException($"Invalid unit '{raw}'. Use KG, GRAM, or POUND.");
-        }
-
-        private VolumeUnit ParseVolumeUnit(string? raw)
-        {
-            string text = raw?.Trim().ToUpper() ?? "";
-            if (text == "LITRE"      || text == "LITER"      || text == "L")   return VolumeUnit.LITRE;
-            if (text == "MILLILITRE" || text == "MILLILITER" || text == "ML")  return VolumeUnit.MILLILITRE;
-            if (text == "GALLON"     || text == "GALLONS"    || text == "GAL") return VolumeUnit.GALLON;
-            throw new ArgumentException($"Invalid unit '{raw}'. Use LITRE, MILLILITRE, or GALLON.");
         }
     }
 }

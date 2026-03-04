@@ -7,10 +7,9 @@ namespace QuantityMeasurementApp.PresentationLayer
 {
     /// <summary>
     /// UC7: Presentation layer for Length addition with explicit target unit.
-    /// Two-step pattern:
-    ///   Step 1 — shows sum in first operand's unit (implicit target).
-    ///   Step 2 — optionally asks for an explicit target unit and shows again.
-    /// Depends on ILengthService — ready for ASP.NET Controller migration.
+    /// /// UC7: Presentation layer for Length addition with explicit target unit.
+    /// The user specifies both operands and a target unit.
+    /// The result is returned directly in the requested target unit.
     /// </summary>
     public class LengthPresentationUC7
     {

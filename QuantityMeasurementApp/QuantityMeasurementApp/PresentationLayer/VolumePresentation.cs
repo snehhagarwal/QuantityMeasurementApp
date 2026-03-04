@@ -14,17 +14,17 @@ namespace QuantityMeasurementApp.PresentationLayer
     ///   Step 1 — shows sum in first operand's unit (implicit target).
     ///   Step 2 — optionally asks for explicit target unit and shows again.
     /// </summary>
-    public class VolumePresentationUC11
+    public class VolumePresentation
     {
         private readonly IVolumeService _service;
 
-        public VolumePresentationUC11()
+        public VolumePresentation()
         {
             _service = new VolumeService();
         }
 
         /// <summary>ASP.NET-ready constructor — accepts service via dependency injection.</summary>
-        public VolumePresentationUC11(IVolumeService service)
+        public VolumePresentation(IVolumeService service)
         {
             _service = service;
         }
