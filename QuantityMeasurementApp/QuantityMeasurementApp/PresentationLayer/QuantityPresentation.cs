@@ -9,14 +9,12 @@ namespace QuantityMeasurementApp.PresentationLayer
     /// <summary>
     /// UC10: Generic Quantity presentation class.
     /// Demonstrates that a single generic Quantity&lt;TUnit&gt; class handles
-    /// Length, Weight, and Volume with zero duplication.
+    /// Length and Weight with zero duplication.
     ///
-    /// UC11: Extended to include Volume as category 3.
+    /// All service calls are routed through ILengthService and IWeightService
+    /// — ready for ASP.NET Controller migration.
     ///
-    /// All service calls are routed through ILengthService, IWeightService,
-    /// and IVolumeService — ready for ASP.NET Controller migration.
-    ///
-    /// Addition follows the two-step pattern (all categories):
+    /// Addition follows the two-step pattern (both categories):
     ///   Step 1 — shows sum in first operand's unit (implicit target).
     ///   Step 2 — optionally asks for explicit target unit and shows again.
     /// </summary>
