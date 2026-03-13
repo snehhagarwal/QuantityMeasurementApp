@@ -1,6 +1,7 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using QuantityMeasurementModel.Entities;
+using QuantityMeasurementBusinessLayer.Unit;
 
 namespace QuantityMeasurementApp.Tests
 {
@@ -17,28 +18,28 @@ namespace QuantityMeasurementApp.Tests
         [TestMethod]
         public void testLengthUnitEnum_FeetConstant()
         {
-            double factor = LengthUnit.FEET.GetConversionFactor();
+            double factor = new LengthUnitExtensions(LengthUnit.FEET).GetConversionFactor();
             Assert.AreEqual(1.0, factor, EPSILON);
         }
 
         [TestMethod]
         public void testLengthUnitEnum_InchesConstant()
         {
-            double factor = LengthUnit.INCHES.GetConversionFactor();
+            double factor = new LengthUnitExtensions(LengthUnit.INCHES).GetConversionFactor();
             Assert.AreEqual(1.0 / 12.0, factor, EPSILON);
         }
 
         [TestMethod]
         public void testLengthUnitEnum_YardsConstant()
         {
-            double factor = LengthUnit.YARDS.GetConversionFactor();
+            double factor = new LengthUnitExtensions(LengthUnit.YARDS).GetConversionFactor();
             Assert.AreEqual(3.0, factor, EPSILON);
         }
 
         [TestMethod]
         public void testLengthUnitEnum_CentimetersConstant()
         {
-            double factor = LengthUnit.CENTIMETERS.GetConversionFactor();
+            double factor = new LengthUnitExtensions(LengthUnit.CENTIMETERS).GetConversionFactor();
             Assert.AreEqual(1.0 / 30.48, factor, EPSILON);
         }
 
@@ -47,56 +48,56 @@ namespace QuantityMeasurementApp.Tests
         [TestMethod]
         public void testConvertToBaseUnit_FeetToFeet()
         {
-            double result = LengthUnit.FEET.ConvertToBaseUnit(5.0);
+            double result = new LengthUnitExtensions(LengthUnit.FEET).ConvertToBaseUnit(5.0);
             Assert.AreEqual(5.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertToBaseUnit_InchesToFeet()
         {
-            double result = LengthUnit.INCHES.ConvertToBaseUnit(12.0);
+            double result = new LengthUnitExtensions(LengthUnit.INCHES).ConvertToBaseUnit(12.0);
             Assert.AreEqual(1.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertToBaseUnit_YardsToFeet()
         {
-            double result = LengthUnit.YARDS.ConvertToBaseUnit(1.0);
+            double result = new LengthUnitExtensions(LengthUnit.YARDS).ConvertToBaseUnit(1.0);
             Assert.AreEqual(3.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertToBaseUnit_CentimetersToFeet()
         {
-            double result = LengthUnit.CENTIMETERS.ConvertToBaseUnit(30.48);
+            double result = new LengthUnitExtensions(LengthUnit.CENTIMETERS).ConvertToBaseUnit(30.48);
             Assert.AreEqual(1.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertFromBaseUnit_FeetToFeet()
         {
-            double result = LengthUnit.FEET.ConvertFromBaseUnit(2.0);
+            double result = new LengthUnitExtensions(LengthUnit.FEET).ConvertFromBaseUnit(2.0);
             Assert.AreEqual(2.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertFromBaseUnit_FeetToInches()
         {
-            double result = LengthUnit.INCHES.ConvertFromBaseUnit(1.0);
+            double result = new LengthUnitExtensions(LengthUnit.INCHES).ConvertFromBaseUnit(1.0);
             Assert.AreEqual(12.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertFromBaseUnit_FeetToYards()
         {
-            double result = LengthUnit.YARDS.ConvertFromBaseUnit(3.0);
+            double result = new LengthUnitExtensions(LengthUnit.YARDS).ConvertFromBaseUnit(3.0);
             Assert.AreEqual(1.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertFromBaseUnit_FeetToCentimeters()
         {
-            double result = LengthUnit.CENTIMETERS.ConvertFromBaseUnit(1.0);
+            double result = new LengthUnitExtensions(LengthUnit.CENTIMETERS).ConvertFromBaseUnit(1.0);
             Assert.AreEqual(30.48, result, EPSILON);
         }
 

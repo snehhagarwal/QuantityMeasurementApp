@@ -2,6 +2,7 @@ using QuantityMeasurementBusinessLayer.Service;
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using QuantityMeasurementModel.Entities;
+using QuantityMeasurementBusinessLayer.Unit;
 using QuantityMeasurementBusinessLayer.Interface;
 
 namespace QuantityMeasurementApp.Tests
@@ -402,21 +403,21 @@ namespace QuantityMeasurementApp.Tests
         [TestMethod]
         public void testVolumeUnitEnum_LitreConstant()
         {
-            double factor = VolumeUnit.LITRE.GetConversionFactor();
+            double factor = new VolumeUnitExtensions(VolumeUnit.LITRE).GetConversionFactor();
             Assert.AreEqual(1.0, factor, EPSILON);
         }
 
         [TestMethod]
         public void testVolumeUnitEnum_MillilitreConstant()
         {
-            double factor = VolumeUnit.MILLILITRE.GetConversionFactor();
+            double factor = new VolumeUnitExtensions(VolumeUnit.MILLILITRE).GetConversionFactor();
             Assert.AreEqual(0.001, factor, EPSILON);
         }
 
         [TestMethod]
         public void testVolumeUnitEnum_GallonConstant()
         {
-            double factor = VolumeUnit.GALLON.GetConversionFactor();
+            double factor = new VolumeUnitExtensions(VolumeUnit.GALLON).GetConversionFactor();
             Assert.AreEqual(LitresPerGallon, factor, EPSILON);
         }
 
@@ -425,21 +426,21 @@ namespace QuantityMeasurementApp.Tests
         [TestMethod]
         public void testConvertToBaseUnit_LitreToLitre()
         {
-            double result = VolumeUnit.LITRE.ConvertToBaseUnit(5.0);
+            double result = new VolumeUnitExtensions(VolumeUnit.LITRE).ConvertToBaseUnit(5.0);
             Assert.AreEqual(5.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertToBaseUnit_MillilitreToLitre()
         {
-            double result = VolumeUnit.MILLILITRE.ConvertToBaseUnit(1000.0);
+            double result = new VolumeUnitExtensions(VolumeUnit.MILLILITRE).ConvertToBaseUnit(1000.0);
             Assert.AreEqual(1.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertToBaseUnit_GallonToLitre()
         {
-            double result = VolumeUnit.GALLON.ConvertToBaseUnit(1.0);
+            double result = new VolumeUnitExtensions(VolumeUnit.GALLON).ConvertToBaseUnit(1.0);
             Assert.AreEqual(LitresPerGallon, result, EPSILON);
         }
 
@@ -448,21 +449,21 @@ namespace QuantityMeasurementApp.Tests
         [TestMethod]
         public void testConvertFromBaseUnit_LitreToLitre()
         {
-            double result = VolumeUnit.LITRE.ConvertFromBaseUnit(2.0);
+            double result = new VolumeUnitExtensions(VolumeUnit.LITRE).ConvertFromBaseUnit(2.0);
             Assert.AreEqual(2.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertFromBaseUnit_LitreToMillilitre()
         {
-            double result = VolumeUnit.MILLILITRE.ConvertFromBaseUnit(1.0);
+            double result = new VolumeUnitExtensions(VolumeUnit.MILLILITRE).ConvertFromBaseUnit(1.0);
             Assert.AreEqual(1000.0, result, EPSILON);
         }
 
         [TestMethod]
         public void testConvertFromBaseUnit_LitreToGallon()
         {
-            double result = VolumeUnit.GALLON.ConvertFromBaseUnit(LitresPerGallon);
+            double result = new VolumeUnitExtensions(VolumeUnit.GALLON).ConvertFromBaseUnit(LitresPerGallon);
             Assert.AreEqual(1.0, result, EPSILON);
         }
 

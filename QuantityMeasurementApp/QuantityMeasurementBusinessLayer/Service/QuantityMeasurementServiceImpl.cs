@@ -3,6 +3,7 @@ using QuantityMeasurementModel.Dto;
 using QuantityMeasurementModel.Entities;
 using QuantityMeasurementBusinessLayer.Interface;
 using QuantityMeasurementBusinessLayer.Exception;
+using QuantityMeasurementBusinessLayer.Unit;
 using QuantityMeasurementRepository.Repository;
 
 namespace QuantityMeasurementBusinessLayer.Service
@@ -18,23 +19,11 @@ namespace QuantityMeasurementBusinessLayer.Service
     ///   SRP  — solely responsible for quantity measurement business logic.
     ///   OCP  — new units/categories added without modifying existing code.
     ///   DIP  — depends on IQuantityMeasurementRepository abstraction (injected).
-    ///
-    /// Broad steps followed in every operation:
-    ///   1. Accept QuantityDTO input.
-    ///   2. Extract IMeasurable units from QuantityDTO (via ResolveUnit helper).
-    ///   3. Validate operands (null check, cross-category check).
-    ///   4. Perform business logic using Quantity&lt;IMeasurable&gt; internally.
-    ///   5. Handle exceptions → wrap in QuantityMeasurementException.
-    ///   6. Create QuantityMeasurementEntity and save to IQuantityMeasurementRepository.
-    ///   7. Return standardized QuantityDTO result.
     /// </summary>
     public class QuantityMeasurementServiceImpl : IQuantityMeasurementService
     {
-        // ── Dependency — injected via constructor (Dependency Injection) ───────
-
         private readonly IQuantityMeasurementRepository _repository;
 
-        /// <summary>Constructor injection — preferred DI pattern.</summary>
         public QuantityMeasurementServiceImpl(IQuantityMeasurementRepository repository)
         {
             _repository = repository
@@ -45,10 +34,6 @@ namespace QuantityMeasurementBusinessLayer.Service
         // COMPARE
         // ═════════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Compares two quantities for equality.
-        /// Both must belong to the same measurement category.
-        /// </summary>
         public QuantityDTO Compare(QuantityDTO first, QuantityDTO second)
         {
             try
@@ -73,10 +58,7 @@ namespace QuantityMeasurementBusinessLayer.Service
 
                 return result;
             }
-            catch (QuantityMeasurementException)
-            {
-                throw;
-            }
+            catch (QuantityMeasurementException) { throw; }
             catch (System.Exception ex)
             {
                 SaveError("COMPARE", first, second, ex.Message);
@@ -88,10 +70,6 @@ namespace QuantityMeasurementBusinessLayer.Service
         // CONVERT
         // ═════════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Converts a quantity to the unit specified in targetUnit.
-        /// targetUnit.Unit must be a valid unit name in the same category.
-        /// </summary>
         public QuantityDTO Convert(QuantityDTO quantity, QuantityDTO targetUnit)
         {
             try
@@ -103,9 +81,9 @@ namespace QuantityMeasurementBusinessLayer.Service
                 IMeasurable srcUnit = ResolveUnit(quantity);
                 IMeasurable tgtUnit = ResolveUnit(targetUnit);
 
-                double baseValue  = srcUnit.ConvertToBaseUnit(quantity.Value);
-                double converted  = tgtUnit.ConvertFromBaseUnit(baseValue);
-                double rounded    = System.Math.Round(converted, 4);
+                double baseValue = srcUnit.ConvertToBaseUnit(quantity.Value);
+                double converted = tgtUnit.ConvertFromBaseUnit(baseValue);
+                double rounded   = System.Math.Round(converted, 4);
 
                 var result = new QuantityDTO(rounded, tgtUnit.GetUnitName(), tgtUnit.GetMeasurementType());
 
@@ -113,10 +91,7 @@ namespace QuantityMeasurementBusinessLayer.Service
 
                 return result;
             }
-            catch (QuantityMeasurementException)
-            {
-                throw;
-            }
+            catch (QuantityMeasurementException) { throw; }
             catch (System.Exception ex)
             {
                 SaveError("CONVERT", quantity, targetUnit, ex.Message);
@@ -128,10 +103,6 @@ namespace QuantityMeasurementBusinessLayer.Service
         // ADD
         // ═════════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Adds two quantities. Result is in the first operand's unit.
-        /// Throws QuantityMeasurementException for Temperature (unsupported arithmetic).
-        /// </summary>
         public QuantityDTO Add(QuantityDTO first, QuantityDTO second)
         {
             try
@@ -141,7 +112,7 @@ namespace QuantityMeasurementBusinessLayer.Service
                 ValidateSameCategory(first, second, "ADD");
 
                 IMeasurable unitA = ResolveUnit(first);
-                unitA.ValidateOperationSupport("Add");   // throws for Temperature
+                unitA.ValidateOperationSupport("Add");
 
                 IMeasurable unitB = ResolveUnit(second);
 
@@ -162,10 +133,7 @@ namespace QuantityMeasurementBusinessLayer.Service
                 SaveError("ADD", first, second, ex.Message);
                 throw new QuantityMeasurementException(ex.Message, ex);
             }
-            catch (QuantityMeasurementException)
-            {
-                throw;
-            }
+            catch (QuantityMeasurementException) { throw; }
             catch (System.Exception ex)
             {
                 SaveError("ADD", first, second, ex.Message);
@@ -177,10 +145,6 @@ namespace QuantityMeasurementBusinessLayer.Service
         // SUBTRACT
         // ═════════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Subtracts second from first. Result is in the first operand's unit.
-        /// Throws QuantityMeasurementException for Temperature (unsupported arithmetic).
-        /// </summary>
         public QuantityDTO Subtract(QuantityDTO first, QuantityDTO second)
         {
             try
@@ -190,7 +154,7 @@ namespace QuantityMeasurementBusinessLayer.Service
                 ValidateSameCategory(first, second, "SUBTRACT");
 
                 IMeasurable unitA = ResolveUnit(first);
-                unitA.ValidateOperationSupport("Subtract");   // throws for Temperature
+                unitA.ValidateOperationSupport("Subtract");
 
                 IMeasurable unitB = ResolveUnit(second);
 
@@ -211,10 +175,7 @@ namespace QuantityMeasurementBusinessLayer.Service
                 SaveError("SUBTRACT", first, second, ex.Message);
                 throw new QuantityMeasurementException(ex.Message, ex);
             }
-            catch (QuantityMeasurementException)
-            {
-                throw;
-            }
+            catch (QuantityMeasurementException) { throw; }
             catch (System.Exception ex)
             {
                 SaveError("SUBTRACT", first, second, ex.Message);
@@ -226,10 +187,6 @@ namespace QuantityMeasurementBusinessLayer.Service
         // DIVIDE
         // ═════════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Divides first by second. Returns dimensionless ratio as QuantityDTO.
-        /// Throws QuantityMeasurementException for Temperature or division by zero.
-        /// </summary>
         public QuantityDTO Divide(QuantityDTO first, QuantityDTO second)
         {
             try
@@ -239,7 +196,7 @@ namespace QuantityMeasurementBusinessLayer.Service
                 ValidateSameCategory(first, second, "DIVIDE");
 
                 IMeasurable unitA = ResolveUnit(first);
-                unitA.ValidateOperationSupport("Divide");   // throws for Temperature
+                unitA.ValidateOperationSupport("Divide");
 
                 IMeasurable unitB = ResolveUnit(second);
 
@@ -263,10 +220,7 @@ namespace QuantityMeasurementBusinessLayer.Service
                 SaveError("DIVIDE", first, second, ex.Message);
                 throw new QuantityMeasurementException(ex.Message, ex);
             }
-            catch (QuantityMeasurementException)
-            {
-                throw;
-            }
+            catch (QuantityMeasurementException) { throw; }
             catch (System.Exception ex)
             {
                 SaveError("DIVIDE", first, second, ex.Message);
@@ -278,10 +232,6 @@ namespace QuantityMeasurementBusinessLayer.Service
         // PRIVATE HELPERS
         // ═════════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Resolves a QuantityDTO's unit name and measurement type to a concrete IMeasurable.
-        /// This is the DTO → IMeasurable mapping used in all service methods.
-        /// </summary>
         private static IMeasurable ResolveUnit(QuantityDTO dto)
         {
             string type = dto.MeasurementType?.ToUpper()
@@ -324,17 +274,12 @@ namespace QuantityMeasurementBusinessLayer.Service
             };
         }
 
-        /// <summary>Validates that neither operand is null.</summary>
         private static void ValidateNotNull(QuantityDTO dto, string name)
         {
             if (dto == null)
                 throw new QuantityMeasurementException($"{name} QuantityDTO cannot be null.");
         }
 
-        /// <summary>
-        /// Validates both DTOs belong to the same measurement category.
-        /// Prevents cross-category operations such as LENGTH + WEIGHT.
-        /// </summary>
         private static void ValidateSameCategory(QuantityDTO first, QuantityDTO second, string operation)
         {
             if (!string.Equals(first.MeasurementType, second.MeasurementType,
@@ -346,7 +291,6 @@ namespace QuantityMeasurementBusinessLayer.Service
             }
         }
 
-        /// <summary>Saves an error entity to the repository.</summary>
         private void SaveError(string operation, QuantityDTO? first, QuantityDTO? second, string message)
         {
             try
@@ -395,217 +339,10 @@ namespace QuantityMeasurementBusinessLayer.Service
         {
             if (tolerance < 0)
                 throw new System.ArgumentException("Tolerance cannot be negative.", nameof(tolerance));
-            return System.Math.Abs(first.ToBaseUnit() - second.ToBaseUnit()) <= tolerance;
+            // Compare via base unit (feet) using LengthUnitExtensions class
+            double baseA = new LengthUnitExtensions(first.Unit).ConvertToBaseUnit(first.Value);
+            double baseB = new LengthUnitExtensions(second.Unit).ConvertToBaseUnit(second.Value);
+            return System.Math.Abs(baseA - baseB) <= tolerance;
         }
     }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // Supporting types — consolidated from individual files
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /// <summary>UC10/UC12/UC13/UC14: Generic Quantity class for any IMeasurable unit.</summary>
-    public class Quantity<TUnit> where TUnit : IMeasurable
-    {
-        public double Value { get; }
-        public TUnit Unit { get; }
-
-        public Quantity(double value, TUnit unit)
-        {
-            if (unit == null)
-                throw new ArgumentNullException(nameof(unit), "Unit cannot be null");
-            if (!double.IsFinite(value))
-                throw new ArgumentException("Value must be a finite number");
-            if (Math.Abs(value) > 10_000_000)
-                throw new ArgumentException("Value too large. Invalid measurement.");
-            Value = value;
-            Unit  = unit;
-        }
-
-        public double ToBaseUnit() => Unit.ConvertToBaseUnit(Value);
-
-        public Quantity<TUnit> ConvertTo(TUnit targetUnit, int decimalPlaces = 2)
-        {
-            if (targetUnit == null)
-                throw new ArgumentNullException(nameof(targetUnit), "Target unit cannot be null");
-            double baseVal  = Unit.ConvertToBaseUnit(Value);
-            double converted = targetUnit.ConvertFromBaseUnit(baseVal);
-            double rounded   = Math.Round(converted, decimalPlaces);
-            return new Quantity<TUnit>(rounded, targetUnit);
-        }
-
-        private enum ArithmeticOperation { Add, Subtract, Divide }
-
-        private static void ValidateArithmeticOperands(
-            Quantity<TUnit> self, Quantity<TUnit> other,
-            TUnit? targetUnit, bool targetUnitRequired)
-        {
-            if (other == null)
-                throw new ArgumentNullException(nameof(other), "Other quantity cannot be null");
-            if (targetUnitRequired && targetUnit == null)
-                throw new ArgumentNullException(nameof(targetUnit), "Target unit cannot be null");
-            if (!double.IsFinite(self.Value))
-                throw new ArgumentException("This quantity value must be finite");
-            if (!double.IsFinite(other.Value))
-                throw new ArgumentException("Other quantity value must be finite");
-        }
-
-        private double PerformBaseArithmetic(Quantity<TUnit> other, ArithmeticOperation operation)
-        {
-            this.Unit.ValidateOperationSupport(operation.ToString());
-            double a = this.ToBaseUnit();
-            double b = other.ToBaseUnit();
-            return operation switch
-            {
-                ArithmeticOperation.Add      => a + b,
-                ArithmeticOperation.Subtract => a - b,
-                ArithmeticOperation.Divide   => b == 0.0
-                    ? throw new ArithmeticException("Cannot divide by a zero quantity")
-                    : a / b,
-                _ => throw new InvalidOperationException($"Unsupported operation: {operation}")
-            };
-        }
-
-        private Quantity<TUnit> BuildResult(double baseResult, TUnit targetUnit, int decimalPlaces)
-        {
-            double converted = targetUnit.ConvertFromBaseUnit(baseResult);
-            double rounded   = Math.Round(converted, decimalPlaces);
-            return new Quantity<TUnit>(rounded, targetUnit);
-        }
-
-        public Quantity<TUnit> Add(Quantity<TUnit> other, int decimalPlaces = 2)
-        {
-            ValidateArithmeticOperands(this, other, default, targetUnitRequired: false);
-            return BuildResult(PerformBaseArithmetic(other, ArithmeticOperation.Add), this.Unit, decimalPlaces);
-        }
-
-        public Quantity<TUnit> Add(Quantity<TUnit> other, TUnit targetUnit, int decimalPlaces = 2)
-        {
-            ValidateArithmeticOperands(this, other, targetUnit, targetUnitRequired: true);
-            return BuildResult(PerformBaseArithmetic(other, ArithmeticOperation.Add), targetUnit, decimalPlaces);
-        }
-
-        public static Quantity<TUnit> Add(Quantity<TUnit> first, Quantity<TUnit> second,
-                                          TUnit resultUnit, int decimalPlaces = 2)
-        {
-            if (first      == null) throw new ArgumentNullException(nameof(first));
-            if (second     == null) throw new ArgumentNullException(nameof(second));
-            if (resultUnit == null) throw new ArgumentNullException(nameof(resultUnit));
-            return first.Add(second, resultUnit, decimalPlaces);
-        }
-
-        public Quantity<TUnit> Subtract(Quantity<TUnit> other, int decimalPlaces = 2)
-        {
-            ValidateArithmeticOperands(this, other, default, targetUnitRequired: false);
-            return BuildResult(PerformBaseArithmetic(other, ArithmeticOperation.Subtract), this.Unit, decimalPlaces);
-        }
-
-        public Quantity<TUnit> Subtract(Quantity<TUnit> other, TUnit targetUnit, int decimalPlaces = 2)
-        {
-            ValidateArithmeticOperands(this, other, targetUnit, targetUnitRequired: true);
-            return BuildResult(PerformBaseArithmetic(other, ArithmeticOperation.Subtract), targetUnit, decimalPlaces);
-        }
-
-        public double Divide(Quantity<TUnit> other)
-        {
-            ValidateArithmeticOperands(this, other, default, targetUnitRequired: false);
-            return PerformBaseArithmetic(other, ArithmeticOperation.Divide);
-        }
-
-        public override bool Equals(object? obj)
-        {
-            if (obj == null) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            var other = (Quantity<TUnit>)obj;
-            if (Unit.GetType() != other.Unit.GetType()) return false;
-            const double epsilon = 1e-9;
-            return Math.Abs(ToBaseUnit() - other.ToBaseUnit()) < epsilon;
-        }
-
-        public override int GetHashCode() => ToBaseUnit().GetHashCode();
-        public override string ToString()  => $"{Value:F2} {Unit.GetUnitName()}";
-    }
-
-    /// <summary>UC15: Internal model wrapping an IMeasurable unit with its value.</summary>
-    public class QuantityModel<U> where U : IMeasurable
-    {
-        public double Value { get; }
-        public U      Unit  { get; }
-
-        public QuantityModel(double value, U unit) { Value = value; Unit = unit; }
-
-        public double ToBaseUnit() => Unit.ConvertToBaseUnit(Value);
-        public override string ToString() => $"{Value:G} {Unit.GetUnitName()}";
-    }
-
-    public readonly struct LengthUnitMeasurable : IMeasurable
-    {
-        public LengthUnit Unit { get; }
-        public LengthUnitMeasurable(LengthUnit unit) { Unit = unit; }
-
-        public double GetConversionFactor()           => Unit.GetConversionFactor();
-        public double ConvertToBaseUnit(double value) => Unit.ConvertToBaseUnit(value);
-        public double ConvertFromBaseUnit(double v)   => Unit.ConvertFromBaseUnit(v);
-        public string GetUnitName()                   => Unit.ToString();
-        public string GetMeasurementType()            => "LENGTH";
-
-        public override bool Equals(object? obj) => obj is LengthUnitMeasurable o && Unit == o.Unit;
-        public override int GetHashCode()         => Unit.GetHashCode();
-        public override string ToString()         => Unit.ToString();
-    }
-
-    public readonly struct WeightUnitMeasurable : IMeasurable
-    {
-        public WeightUnit Unit { get; }
-        public WeightUnitMeasurable(WeightUnit unit) { Unit = unit; }
-
-        public double GetConversionFactor()           => Unit.GetConversionFactor();
-        public double ConvertToBaseUnit(double value) => Unit.ConvertToBaseUnit(value);
-        public double ConvertFromBaseUnit(double v)   => Unit.ConvertFromBaseUnit(v);
-        public string GetUnitName()                   => Unit.ToString();
-        public string GetMeasurementType()            => "WEIGHT";
-
-        public override bool Equals(object? obj) => obj is WeightUnitMeasurable o && Unit == o.Unit;
-        public override int GetHashCode()         => Unit.GetHashCode();
-        public override string ToString()         => Unit.ToString();
-    }
-
-    public readonly struct VolumeUnitMeasurable : IMeasurable
-    {
-        public VolumeUnit Unit { get; }
-        public VolumeUnitMeasurable(VolumeUnit unit) { Unit = unit; }
-
-        public double GetConversionFactor()           => Unit.GetConversionFactor();
-        public double ConvertToBaseUnit(double value) => Unit.ConvertToBaseUnit(value);
-        public double ConvertFromBaseUnit(double v)   => Unit.ConvertFromBaseUnit(v);
-        public string GetUnitName()                   => Unit.ToString();
-        public string GetMeasurementType()            => "VOLUME";
-
-        public override bool Equals(object? obj) => obj is VolumeUnitMeasurable o && Unit == o.Unit;
-        public override int GetHashCode()         => Unit.GetHashCode();
-        public override string ToString()         => Unit.ToString();
-    }
-
-    public readonly struct TemperatureUnitMeasurable : IMeasurable
-    {
-        public TemperatureUnit Unit { get; }
-        private static readonly IMeasurable.SupportsArithmetic supportsArithmetic = () => false;
-
-        public TemperatureUnitMeasurable(TemperatureUnit unit) { Unit = unit; }
-
-        public double GetConversionFactor()           => Unit.GetConversionFactor();
-        public double ConvertToBaseUnit(double value) => Unit.ConvertToBaseUnit(value);
-        public double ConvertFromBaseUnit(double v)   => Unit.ConvertFromBaseUnit(v);
-        public string GetUnitName()                   => Unit.ToString();
-        public string GetMeasurementType()            => "TEMPERATURE";
-
-        public bool SupportsArithmeticOps() => supportsArithmetic();
-        public void ValidateOperationSupport(string operation)
-            => throw new NotSupportedException($"Temperature does not support {operation}.");
-
-        public override bool Equals(object? obj) => obj is TemperatureUnitMeasurable o && Unit == o.Unit;
-        public override int GetHashCode()         => Unit.GetHashCode();
-        public override string ToString()         => Unit.ToString();
-    }
-
 }
