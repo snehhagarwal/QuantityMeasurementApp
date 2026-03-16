@@ -1,6 +1,6 @@
 # Quantity Measurement Application
 
-A progressive .NET 10 console application for performing measurement equality, conversion, and arithmetic across Length, Weight, Volume, and Temperature categories. The system grows incrementally through fourteen use cases — from a simple feet comparison to a fully generic, extensible arithmetic engine built on the `IMeasurable` interface and `Quantity<TUnit>`, culminating in non-linear temperature support with selective arithmetic enforcement.
+A progressive .NET 10 console application for performing measurement equality, conversion, and arithmetic across Length, Weight, Volume, and Temperature categories. The system grows incrementally through fifteen use cases — from a simple feet comparison to a fully generic, extensible arithmetic engine built on the `IMeasurable` interface and `Quantity<TUnit>`, culminating in a complete N-Tier architecture with controller, service, repository, and model layers powered by a unified `QuantityMeasurementServiceImpl`.
 
 ---
 
@@ -23,50 +23,44 @@ A progressive .NET 10 console application for performing measurement equality, c
 | Metric | Value |
 |---|---|
 | Framework | .NET 10 |
-| Use Cases | UC1 – UC14 |
+| Use Cases | UC1 – UC15 |
 | Measurement Categories | Length, Weight, Volume, Temperature |
 | Supported Units | 13 across 4 categories |
 | Operations | Equality, Conversion, Add, Subtract, Divide |
-| Total Tests | 353 |
+| Total Tests | 433 |
 | Test Framework | MSTest 4.x |
 
 ---
 
 ## Architecture
 
-The application follows a strict five-layer architecture. Each layer has a single responsibility and depends only on the layer below it.
+UC15 replaces the flat single-project structure with a clean four-project N-Tier solution. Each project has a single responsibility and depends only on the layer below it.
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  PresentationLayer                                           │
-│  FeetPresentation  InchesPresentation  LengthPresentation    │
-│  LengthPresentationUC4–UC7  WeightPresentationUC9            │
-│  QuantityPresentation  VolumePresentation                    │
-│  SubtractionAndDivisionPresentationUC12                      │
-│  TemperaturePresentation                                     │
-├──────────────────────────────────────────────────────────────┤
-│  BusinessLogicLayer                                          │
-│  FeetService  InchesService  LengthService                   │
-│  WeightService  VolumeService  TemperatureService            │
-├──────────────────────────────────────────────────────────────┤
-│  DataAccessLayer                                             │
-│  FeetRepository  InchesRepository  LengthRepository          │
-│  WeightRepository  VolumeRepository  TemperatureRepository   │
-├──────────────────────────────────────────────────────────────┤
-│  Entities                                                    │
-│  Feet  Inches  Length  Weight  Quantity<TUnit>               │
-│  LengthUnit  WeightUnit  VolumeUnit  TemperatureUnit         │
-│  *UnitExtensions (×4)   *UnitMeasurable (×4)                │
-├──────────────────────────────────────────────────────────────┤
-│  Interface                                                   │
-│  IMeasurable  IFeetService  IInchesService  ILengthService   │
-│  IWeightService  IVolumeService  ITemperatureService         │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  QuantityMeasurementApp  (Presentation / Entry Point)                │
+│  Program.cs  QuantityMeasurementController  IQuantityMeasurementApp  │
+├──────────────────────────────────────────────────────────────────────┤
+│  QuantityMeasurementBusinessLayer                                    │
+│  IQuantityMeasurementService   QuantityMeasurementServiceImpl        │
+│  IMeasurable   Quantity<TUnit>   *UnitMeasurable (×4)                │
+│  LengthUnitExtensions  WeightUnitExtensions                          │
+│  VolumeUnitExtensions  TemperatureUnitExtensions                     │
+│  QuantityMeasurementException                                        │
+├──────────────────────────────────────────────────────────────────────┤
+│  QuantityMeasurementRepository                                       │
+│  IQuantityMeasurementRepository  QuantityMeasurementCacheRepository  │
+├──────────────────────────────────────────────────────────────────────┤
+│  QuantityMeasurementModel                                            │
+│  QuantityDTO  QuantityMeasurementEntity                              │
+│  LengthUnit  WeightUnit  VolumeUnit  TemperatureUnit                 │
+│  Feet  Inches  Length  Weight                                        │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-**Dependency direction:** Presentation → BLL → DAL → Entities → Interface
+**Dependency direction:** App → BusinessLayer → Repository → Model
 
-Each `*Service` class accepts its repository via a parameterless constructor (default) or a DI constructor — making the full stack ready for ASP.NET Controller migration without changes.
+Each layer communicates through interfaces — `IQuantityMeasurementService` between App and BLL, `IQuantityMeasurementRepository` between BLL and Repository. This makes the full stack ready for ASP.NET Controller migration and database swapping without modifying any business logic.
 
 ---
 
@@ -75,69 +69,50 @@ Each `*Service` class accepts its repository via a parameterless constructor (de
 ```
 QuantityMeasurementApp/
 │
-├── QuantityMeasurementApp/
-│   ├── Entities/
-│   │   ├── Feet.cs
-│   │   ├── Inches.cs
-│   │   ├── Length.cs
-│   │   ├── LengthUnit.cs
-│   │   ├── LengthUnitExtensions.cs
-│   │   ├── LengthUnitMeasurable.cs
-│   │   ├── Quantity.cs
-│   │   ├── VolumeUnit.cs
-│   │   ├── VolumeUnitExtensions.cs
-│   │   ├── VolumeUnitMeasurable.cs
-│   │   ├── Weight.cs
-│   │   ├── WeightUnit.cs
-│   │   ├── WeightUnitExtensions.cs
-│   │   ├── WeightUnitMeasurable.cs
-│   │   ├── TemperatureUnit.cs
-│   │   ├── TemperatureUnitExtensions.cs
-│   │   └── TemperatureUnitMeasurable.cs
-│   │
+├── QuantityMeasurementApp/               ← Entry point (Exe)
+│   ├── Controller/
+│   │   └── QuantityMeasurementController.cs
+│   ├── Interface/
+│   │   └── IQuantityMeasurementApp.cs
+│   └── Program.cs
+│
+├── QuantityMeasurementBusinessLayer/     ← Business logic
 │   ├── Interface/
 │   │   ├── IMeasurable.cs
-│   │   ├── IFeetService.cs
-│   │   ├── IInchesService.cs
-│   │   ├── ILengthService.cs
-│   │   ├── IWeightService.cs
-│   │   ├── IVolumeService.cs
-│   │   └── ITemperatureService.cs
-│   │
-│   ├── DataAccessLayer/
-│   │   ├── FeetRepository.cs
-│   │   ├── InchesRepository.cs
-│   │   ├── LengthRepository.cs
-│   │   ├── WeightRepository.cs
-│   │   ├── VolumeRepository.cs
-│   │   └── TemperatureRepository.cs
-│   │
-│   ├── BusinessLogicLayer/
-│   │   ├── FeetService.cs
-│   │   ├── InchesService.cs
-│   │   ├── LengthService.cs
-│   │   ├── WeightService.cs
-│   │   ├── VolumeService.cs
-│   │   └── TemperatureService.cs
-│   │
-│   ├── PresentationLayer/
-│   │   ├── FeetPresentation.cs
-│   │   ├── InchesPresentation.cs
-│   │   ├── LengthPresentation.cs
-│   │   ├── LengthPresentationUC4.cs
-│   │   ├── LengthPresentationUC5.cs
-│   │   ├── LengthPresentationUC6.cs
-│   │   ├── LengthPresentationUC7.cs
-│   │   ├── WeightPresentationUC9.cs
-│   │   ├── QuantityPresentation.cs
-│   │   ├── VolumePresentation.cs
-│   │   ├── SubtractionAndDivisionPresentationUC12.cs
-│   │   └── TemperaturePresentation.cs
-│   │
-│   ├── Program.cs
-│   └── QuantityMeasurementApp.csproj
+│   │   └── IQuantityMeasurementService.cs
+│   ├── Service/
+│   │   ├── Quantity.cs
+│   │   ├── QuantityMeasurementServiceImpl.cs
+│   │   └── UnitMeasurables.cs
+│   ├── Unit/
+│   │   ├── LengthUnitExtensions.cs
+│   │   ├── WeightUnitExtensions.cs
+│   │   ├── VolumeUnitExtensions.cs
+│   │   └── TemperatureUnitExtensions.cs
+│   └── Exception/
+│       └── QuantityMeasurementException.cs
 │
-└── QuantityMeasurementApp.Tests/
+├── QuantityMeasurementRepository/        ← Persistence layer
+│   ├── Interface/
+│   │   └── IQuantityMeasurementRepository.cs
+│   └── Repository/
+│       └── QuantityMeasurementCacheRepository.cs
+│
+├── QuantityMeasurementModel/             ← Pure data model
+│   ├── Dto/
+│   │   ├── QuantityDTO.cs
+│   │   └── QuantityMeasurementEntity.cs
+│   └── Entities/
+│       ├── Feet.cs
+│       ├── Inches.cs
+│       ├── Length.cs
+│       ├── Weight.cs
+│       ├── LengthUnit.cs
+│       ├── WeightUnit.cs
+│       ├── VolumeUnit.cs
+│       └── TemperatureUnit.cs
+│
+└── QuantityMeasurementApp.Tests/         ← All tests
     ├── FeetTests.cs
     ├── InchesTest.cs
     ├── QuantityTests.cs
@@ -152,7 +127,7 @@ QuantityMeasurementApp/
     ├── SubtractionAndDivisionTests.cs
     ├── CentralizedArithmeticLogicTests.cs
     ├── TemperatureMeasurementTests.cs
-    └── MSTestSettings.cs
+    └── NTierArchitectureTests.cs
 ```
 
 ---
@@ -324,7 +299,7 @@ var  sum   = feet.Add(inches);                                             // Qu
 var  conv  = feet.ConvertTo(new LengthUnitMeasurable(LengthUnit.INCHES)); // Quantity(12.0, INCHES)
 ```
 
-Cross-category operations are prevented at compile time by the generic type parameter — `Quantity<LengthUnitMeasurable>` and `Quantity<WeightUnitMeasurable>` are distinct types.
+Cross-category operations are prevented at compile time by the generic type parameter.
 
 ---
 
@@ -379,23 +354,15 @@ double ratio = x.Divide(y); // 5.0
 | 1 L ÷ 500 mL | 2.0 (scalar) |
 | anything ÷ 0 | `ArithmeticException` |
 
-Negative results from subtraction are valid. Immutability is preserved — originals are never modified.
-
 ---
 
 ### UC13 — Centralized Arithmetic Logic (DRY Refactor)
 
-A pure internal refactor of `Quantity<TUnit>` — no new features, no new units, no API changes. The goal is to eliminate code duplication across `Add`, `Subtract`, and `Divide` by extracting shared arithmetic logic into centralized helpers.
-
-**Before UC13:** Each arithmetic method (`Add`, `Subtract`, `Divide`) repeated the same base-unit conversion, validation, and result-building steps independently.
-
-**After UC13:** All three methods delegate to a single `PerformBaseArithmetic` helper via the `ArithmeticOperation` enum, mirroring the `DoubleBinaryOperator` functional interface pattern.
+A pure internal refactor of `Quantity<TUnit>` — no new features, no new units, no API changes. Eliminates code duplication across `Add`, `Subtract`, and `Divide` by extracting shared arithmetic logic into centralized helpers.
 
 ```csharp
-// ArithmeticOperation enum drives the operation selector
 private enum ArithmeticOperation { Add, Subtract, Divide }
 
-// All three public methods delegate to this single helper
 private double PerformBaseArithmetic(Quantity<TUnit> other, ArithmeticOperation operation)
 {
     ValidateArithmeticOperands(this, other);
@@ -409,43 +376,28 @@ private double PerformBaseArithmetic(Quantity<TUnit> other, ArithmeticOperation 
 }
 ```
 
-Four private helpers introduced: `ValidateArithmeticOperands`, `PerformBaseArithmetic`, `BuildResult`, and the `ArithmeticOperation` enum itself. All 262 existing tests pass without modification — the refactor is fully transparent to callers.
+All existing tests pass without modification — the refactor is fully transparent to callers.
 
 ---
 
 ### UC14 — Temperature Measurement
 
-Introduces `TemperatureUnit` (CELSIUS, FAHRENHEIT, KELVIN) as the fourth measurement category. Temperature is physically meaningful for equality and conversion, but **arithmetic on temperature is undefined** — adding or dividing absolute temperatures produces physically meaningless results.
+Introduces `TemperatureUnit` (CELSIUS, FAHRENHEIT, KELVIN) as the fourth measurement category. Temperature supports equality and conversion but **not arithmetic** — adding or dividing temperatures produces physically meaningless results.
 
-**Key design decisions:**
-
-**1. Selective arithmetic via IMeasurable default methods.**
-Rather than forcing `TemperatureUnitMeasurable` to implement dummy arithmetic, `IMeasurable` was evolved with two optional default methods:
+**Selective arithmetic via IMeasurable default methods:**
 
 ```csharp
 public interface IMeasurable
 {
-    // ... existing 4 methods unchanged ...
-
     // UC14: default methods — existing units inherit these unchanged
-    bool SupportsArithmeticOps()               => true;
-    void ValidateOperationSupport(string op)   { }  // no-op default
+    bool SupportsArithmeticOps()             => true;
+    void ValidateOperationSupport(string op) { }  // no-op default
 }
 ```
 
-`TemperatureUnitMeasurable` overrides both to block arithmetic:
+`TemperatureUnitMeasurable` overrides both to block arithmetic. All existing units (`LengthUnitMeasurable`, `WeightUnitMeasurable`, `VolumeUnitMeasurable`) inherit the default `true` — **zero changes required**.
 
-```csharp
-public bool SupportsArithmeticOps() => false;  // lambda: () => false
-
-public void ValidateOperationSupport(string operation)
-    => throw new NotSupportedException($"Temperature does not support {operation}.");
-```
-
-All existing units (`LengthUnitMeasurable`, `WeightUnitMeasurable`, `VolumeUnitMeasurable`) inherit the default `true` — **zero changes required**.
-
-**2. Non-linear conversion via lambda expressions.**
-Temperature conversions use offset-based formulas, not simple multiplication factors. `TemperatureUnitExtensions` uses `Func<double, double>` lambdas for each path:
+**Non-linear conversion via lambda expressions:**
 
 ```csharp
 private static readonly Func<double, double> CelsiusToFahrenheit = c => (c * 9.0 / 5.0) + 32.0;
@@ -454,25 +406,14 @@ private static readonly Func<double, double> CelsiusToKelvin     = c => c + 273.
 private static readonly Func<double, double> KelvinToCelsius     = k => k - 273.15;
 ```
 
-**3. Epsilon-tolerant equality.**
-`Quantity.Equals` uses `Math.Abs(ToBaseUnit() - other.ToBaseUnit()) < 1e-9` to absorb floating-point round-trip errors in temperature conversions.
-
-**4. Arithmetic blocked at the entry point.**
-`Quantity<TUnit>.PerformBaseArithmetic` calls `this.Unit.ValidateOperationSupport(operation)` before touching any numbers — temperature throws immediately, all other units proceed normally.
-
 ```csharp
 // Equality and conversion — fully supported
 new Quantity<TemperatureUnitMeasurable>(0.0,   CELSIUS).Equals(
 new Quantity<TemperatureUnitMeasurable>(32.0,  FAHRENHEIT))     // true
-new Quantity<TemperatureUnitMeasurable>(100.0, CELSIUS).ConvertTo(FAHRENHEIT)  // 212.0 FAHRENHEIT
 
 // Arithmetic — throws NotSupportedException
 new Quantity<TemperatureUnitMeasurable>(100.0, CELSIUS).Add(
-new Quantity<TemperatureUnitMeasurable>(50.0,  CELSIUS))        // NotSupportedException: Temperature does not support Add.
-
-// Cross-category — always false
-new Quantity<TemperatureUnitMeasurable>(100.0, CELSIUS).Equals(
-new Quantity<LengthUnitMeasurable>(100.0,      FEET))           // false
+new Quantity<TemperatureUnitMeasurable>(50.0,  CELSIUS))        // NotSupportedException
 ```
 
 **Temperature conversion formulas:**
@@ -483,19 +424,110 @@ new Quantity<LengthUnitMeasurable>(100.0,      FEET))           // false
 | FAHRENHEIT | CELSIUS | `(F − 32) × 5/9` |
 | CELSIUS | KELVIN | `C + 273.15` |
 | KELVIN | CELSIUS | `K − 273.15` |
-| FAHRENHEIT | KELVIN | via CELSIUS intermediate |
-| KELVIN | FAHRENHEIT | via CELSIUS intermediate |
 
-**Notable conversion points:**
+---
 
-| Value | Equivalent |
-|---|---|
-| 0°C | 32°F = 273.15 K |
-| 100°C | 212°F = 373.15 K |
-| −40°C | −40°F (scales intersect here) |
-| 0 K | −273.15°C = −459.67°F (absolute zero) |
+### UC15 — N-Tier Architecture
 
-The service interface `ITemperatureService` exposes only `AreEqual` and `ConvertTo` — no arithmetic methods — enforcing the constraint at the API boundary as well.
+Restructures the application from a single-project flat design into a clean **four-project N-Tier solution**. The `Quantity<TUnit>` engine from UC14 becomes the internal implementation detail of a unified service layer. All user-facing operations are standardized around `QuantityDTO` — a simple data transfer object that decouples the presentation layer from measurement internals entirely.
+
+**Key structural changes from UC14:**
+
+The six separate service interfaces (`ILengthService`, `IWeightService`, `IVolumeService`, `ITemperatureService`, `IFeetService`, `IInchesService`) are **replaced by a single** `IQuantityMeasurementService` with five operations. The per-category `*Presentation` and `*Repository` classes are replaced by `QuantityMeasurementController`, `QuantityMeasurementServiceImpl`, and `QuantityMeasurementCacheRepository`.
+
+**IQuantityMeasurementService — the single service contract:**
+
+```csharp
+public interface IQuantityMeasurementService
+{
+    QuantityDTO Compare(QuantityDTO first, QuantityDTO second);
+    QuantityDTO Convert(QuantityDTO quantity, QuantityDTO targetUnit);
+    QuantityDTO Add(QuantityDTO first, QuantityDTO second);
+    QuantityDTO Subtract(QuantityDTO first, QuantityDTO second);
+    QuantityDTO Divide(QuantityDTO first, QuantityDTO second);
+}
+```
+
+**QuantityDTO — the layer boundary object:**
+
+```csharp
+// All operations use the same DTO contract
+var feet   = new QuantityDTO(1.0,  "FEET",   "LENGTH");
+var inches = new QuantityDTO(12.0, "INCHES", "LENGTH");
+
+QuantityDTO result = service.Compare(feet, inches);
+// result.MeasurementType == "TRUE"
+// result.Value           == 1
+
+QuantityDTO converted = service.Convert(feet, new QuantityDTO(0, "INCHES", "LENGTH"));
+// converted.Value == 12.0
+// converted.Unit  == "INCHES"
+
+QuantityDTO sum = service.Add(feet, inches);
+// sum.Value == 2.0
+// sum.Unit  == "FEET"
+
+QuantityDTO ratio = service.Divide(feet, new QuantityDTO(0.5, "FEET", "LENGTH"));
+// ratio.Value           == 2.0
+// ratio.MeasurementType == "DIMENSIONLESS"
+```
+
+**QuantityMeasurementServiceImpl internals:**
+
+The service maps `QuantityDTO` inputs to the appropriate `*UnitMeasurable` struct via a `ResolveUnit` helper, performs business logic using the existing `Quantity<TUnit>` infrastructure from UC10–UC14, and records every operation as a `QuantityMeasurementEntity` in the repository before returning a `QuantityDTO` result. Errors are caught, wrapped in `QuantityMeasurementException`, and saved as error entities — so the repository provides a complete audit trail including failures.
+
+```csharp
+// Service resolves DTO → IMeasurable internally
+private static IMeasurable ResolveUnit(QuantityDTO dto) => dto.MeasurementType switch
+{
+    "LENGTH"      => new LengthUnitMeasurable(Enum.Parse<LengthUnit>(dto.Unit)),
+    "WEIGHT"      => new WeightUnitMeasurable(Enum.Parse<WeightUnit>(dto.Unit)),
+    "VOLUME"      => new VolumeUnitMeasurable(Enum.Parse<VolumeUnit>(dto.Unit)),
+    "TEMPERATURE" => new TemperatureUnitMeasurable(Enum.Parse<TemperatureUnit>(dto.Unit)),
+    _             => throw new QuantityMeasurementException($"Unknown type: {dto.MeasurementType}")
+};
+```
+
+**IQuantityMeasurementRepository — persistence contract:**
+
+```csharp
+public interface IQuantityMeasurementRepository
+{
+    void Save(QuantityMeasurementEntity entity);
+    IReadOnlyList<QuantityMeasurementEntity> GetAllMeasurements();
+    void Clear();
+}
+```
+
+`QuantityMeasurementCacheRepository` implements this as a thread-safe singleton with in-memory list and disk persistence via append-mode text file — mirroring the Java `AppendableObjectOutputStream` pattern.
+
+**QuantityMeasurementEntity — the audit record:**
+
+Every operation saves one immutable entity recording the operation type, both operands, the result, any error message, and a timestamp. The controller's "Operation History" menu reads these directly from the repository.
+
+```csharp
+// Successful operation
+new QuantityMeasurementEntity("ADD", firstDto, secondDto, "2 FEET");
+
+// Error case
+new QuantityMeasurementEntity("ADD", firstDto, secondDto, "Temperature does not support Add.", isError: true);
+```
+
+**Controller — presentation layer:**
+
+`QuantityMeasurementController` implements `IQuantityMeasurementApp` and handles all console I/O. It accepts two DI constructors — a default that wires itself internally (for `Program.cs`) and an injected constructor (for tests and future ASP.NET migration). The five `PerformXxx` methods map directly to REST `POST` endpoints:
+
+```
+POST /api/quantity/compare
+POST /api/quantity/convert
+POST /api/quantity/add
+POST /api/quantity/subtract
+POST /api/quantity/divide
+```
+
+**Backward compatibility:**
+
+All UC1–UC14 test behaviour is preserved unchanged. The service layer accepts `QuantityDTO` inputs that cover every unit and operation previously tested, and delegates to the identical `Quantity<TUnit>` arithmetic engine. Legacy `FeetService`, `InchesService`, and `LengthService` classes are retained inside the service file for `FeetTests.cs`, `InchesTest.cs`, and `ExtendedUnitSupport.cs` compatibility.
 
 ---
 
@@ -541,34 +573,27 @@ The service interface `ITemperatureService` exposes only `AreEqual` and `Convert
 
 ```
 Quantity Measurement Application
-----------------------------------
-1.  Feet Equality
-2.  Feet and Inches Equality
-3.  Generic Length Equality
-4.  Extended Units Equality
-5.  Unit-to-Unit Conversion
-6.  Addition of Lengths
-7.  Addition with Target Unit
-8.  Weight Measurement
-9.  Generic Quantity Measurement
-10. Volume Measurement
-11. Subtraction and Division
-12. Temperature Measurement
-0.  Exit
+---------------------------------
+1. Length Operations
+2. Weight Operations
+3. Volume Operations
+4. Temperature Operations
+5. Operation History
+0. Exit
 ```
 
-Each menu option maps to exactly one `*Presentation` class. All presentation classes depend on a service interface, making this a straightforward controller registration list if the application migrates to ASP.NET.
-
-**Temperature Measurement sub-menu (option 12):**
+Each category option leads to a sub-menu:
 
 ```
-UC14: Temperature Measurement (Celsius, Fahrenheit, Kelvin)
-
-1. Equality Comparison
-2. Unit Conversion
-3. Unsupported Arithmetic (Add / Subtract / Divide)
-4. Cross-Category Prevention
+LENGTH Operations
+1. Compare
+2. Convert
+3. Add
+4. Subtract
+5. Divide
 ```
+
+The **Operation History** option (5) displays all recorded `QuantityMeasurementEntity` entries — including errors — retrieved from `IQuantityMeasurementRepository`.
 
 ---
 
@@ -588,11 +613,26 @@ UC14: Temperature Measurement (Celsius, Fahrenheit, Kelvin)
 | `GenericQuantityTests.cs` | UC10 | 35 |
 | `VolumeTests.cs` | UC11 | 50 |
 | `SubtractionAndDivisionTests.cs` | UC12 | 40 |
-| `CentralizedArithmeticLogicTests.cs` | UC13 | 24 |
+| `CentralizedArithmeticLogicTests.cs` | UC13 | 40 |
 | `TemperatureMeasurementTests.cs` | UC14 | 41 |
-| **Total** | | **353** |
+| `NTierArchitectureTests.cs` | UC15 | 40 |
+| **Total** | | **393** |
 
 All tests run in parallel via `MSTestSettings.cs` (`ExecutionScope.MethodLevel`).
+
+### UC15 Test Coverage
+
+`NTierArchitectureTests.cs` exercises the full N-Tier stack across five categories:
+
+**Entity tests** — construction of single-operand, binary, and error `QuantityMeasurementEntity` records; immutability verification; `ToString()` formatting for both success and error cases.
+
+**Service tests** — same-unit and cross-unit comparison; unit conversion; addition, subtraction, and division; cross-category rejection; unsupported temperature arithmetic; division by zero; null input rejection.
+
+**Controller tests** — integration between controller and service for all five operations; error display formatting; console output format (timestamp brackets, `=>` separator).
+
+**Layer separation tests** — service independence (no controller needed); controller independence (mock service injection); data flow from controller to service and back.
+
+**Backward compatibility & scalability** — single test runs all UC1–UC14 scenarios via the UC15 service layer, confirming zero behavioral regression; all four measurement categories exercised; all thirteen unit implementations verified; operation type tracking in repository history; loose coupling via interface substitution.
 
 ---
 
@@ -609,7 +649,7 @@ cd QuantityMeasurementApp
 dotnet build
 
 # Run the application
-dotnet run --project QuantityMeasurementApp
+dotnet run --project QuantityMeasurementApp/QuantityMeasurementApp
 
 # Run all tests
 dotnet test
@@ -621,12 +661,14 @@ dotnet test
 
 | Principle | How it is applied |
 |---|---|
-| Single Responsibility | Each unit enum owns its own conversion logic via extension methods |
-| Open / Closed | New measurement categories plug into `Quantity<TUnit>` without modifying it |
-| Dependency Inversion | Each service class depends on its interface (`IFeetService`, `IVolumeService`, `ITemperatureService`, etc.) |
-| Interface Segregation | `ITemperatureService` exposes only equality and conversion — no arithmetic methods leak through |
-| DRY | UC13 centralised all arithmetic into `PerformBaseArithmetic`; `Quantity<TUnit>` handles all categories |
-| Immutability | Every operation (`Add`, `Subtract`, `ConvertTo`) returns a new object; originals are unchanged |
-| Layer Separation | DAL stays thin — it delegates all domain logic to entity methods and never recomputes |
+| Single Responsibility | Each layer has one job: App handles I/O, BLL handles logic, Repository handles storage, Model holds data |
+| Open / Closed | New measurement categories plug into `Quantity<TUnit>` and `IQuantityMeasurementService` without modifying existing code |
+| Dependency Inversion | Controller depends on `IQuantityMeasurementService`; service depends on `IQuantityMeasurementRepository`; neither depends on concrete implementations |
+| Interface Segregation | `ITemperatureService` exposes only equality and conversion — no arithmetic leaks through; `IQuantityMeasurementApp` exposes only `Run()` |
+| DRY | UC13 centralised all arithmetic into `PerformBaseArithmetic`; UC15 centralises all operations into one service and one controller |
+| Immutability | Every operation (`Add`, `Subtract`, `ConvertTo`) returns a new object; `QuantityMeasurementEntity` has no setters |
+| Layer Separation | Repository stays thin — it records entities without any domain logic; service delegates storage after every operation |
 | Default Interface Methods | UC14 uses C# default interface methods on `IMeasurable` to make arithmetic opt-out for temperature without breaking existing units |
 | Functional Interfaces | Lambda expressions (`Func<double, double>`) implement temperature conversion formulas; the `SupportsArithmetic` delegate mirrors the `DoubleBinaryOperator` pattern |
+| Facade Pattern | `QuantityMeasurementController` hides the service and repository complexity behind simple `PerformXxx` methods, ready to map to REST endpoints |
+| Factory / Strategy | `ResolveUnit` in the service acts as a factory, mapping `QuantityDTO` string fields to the correct `IMeasurable` struct at runtime |
