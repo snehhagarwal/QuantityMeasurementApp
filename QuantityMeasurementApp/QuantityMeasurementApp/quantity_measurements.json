@@ -1,0 +1,11 @@
+[
+  {
+    "OperationType": "CONVERT",
+    "FirstOperand": "1 FEET",
+    "SecondOperand": null,
+    "Result": "12 INCHES",
+    "IsError": false,
+    "ErrorMessage": null,
+    "Timestamp": "2026-03-23T10:29:03.0227527\u002B05:30"
+  }
+]
