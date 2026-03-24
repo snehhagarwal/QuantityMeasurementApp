@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using QuantityMeasurementModel.Dto;
 using QuantityMeasurementModel.Interface;
+using Microsoft.Extensions.Logging;
 using QuantityMeasurementRepository.Repository;
 
 namespace QuantityMeasurementApp.Tests
@@ -444,10 +445,11 @@ namespace QuantityMeasurementApp.Tests
         [TestMethod]
         public void testRepositoryFactory_CreateCacheRepository()
         {
-            IQuantityMeasurementEntityRepository cacheRepo = QuantityMeasurementCacheRepository.Instance;
+            var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger<CacheRepository>();
+            IQuantityMeasurementEntityRepository cacheRepo = new CacheRepository(logger);
 
             Assert.IsNotNull(cacheRepo);
-            Assert.IsInstanceOfType(cacheRepo, typeof(QuantityMeasurementCacheRepository));
+            Assert.IsInstanceOfType(cacheRepo, typeof(CacheRepository));
         }
 
         [TestMethod]
@@ -617,8 +619,8 @@ namespace QuantityMeasurementApp.Tests
         {
             // Verify all layer types exist and are accessible
             Assert.IsNotNull(typeof(IQuantityMeasurementEntityRepository));
-            Assert.IsNotNull(typeof(QuantityMeasurementRepository.Repository.QuantityMeasurementCacheRepository));
-            Assert.IsNotNull(typeof(QuantityMeasurementRepository.Repository.QuantityMeasurementDatabaseRepository));
+            Assert.IsNotNull(typeof(QuantityMeasurementRepository.Repository.CacheRepository));
+            Assert.IsNotNull(typeof(QuantityMeasurementRepository.Repository.RedisRepository));
             Assert.IsNotNull(typeof(QuantityMeasurementRepository.Exception.DatabaseException));
             Assert.IsNotNull(typeof(QuantityMeasurementBusinessLayer.Service.QuantityMeasurementServiceImpl));
             Assert.IsNotNull(typeof(QuantityMeasurementApp.Controller.QuantityMeasurementController));

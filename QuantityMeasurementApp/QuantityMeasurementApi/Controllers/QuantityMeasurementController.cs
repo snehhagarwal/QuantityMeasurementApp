@@ -22,6 +22,7 @@ namespace QuantityMeasurementApi.Controllers
         public async Task<IActionResult> PerformCompare([FromBody] QuantityInputDto input, CancellationToken cancellationToken)
             => Ok(await _service.CompareAsync(input.ThisQuantityDTO, input.ThatQuantityDTO, cancellationToken)
                 .ConfigureAwait(false));
+                
 
         [HttpPost("convert")]
         [ProducesResponseType(typeof(QuantityMeasurementDto), StatusCodes.Status200OK)]

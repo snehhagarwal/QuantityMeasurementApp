@@ -1,40 +1,34 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using QuantityMeasurementModel.Dto;
+using QuantityMeasurementModel.Context;
 using QuantityMeasurementModel.Interface;
 using QuantityMeasurementApp.Interface;
 using QuantityMeasurementBusinessLayer.Interface;
 using QuantityMeasurementBusinessLayer.Service;
 using QuantityMeasurementBusinessLayer.Exceptions;
 using QuantityMeasurementRepository.Repository;
+using StackExchange.Redis;
 
 namespace QuantityMeasurementApp.Controller
 {
     /// <summary>
-    /// UC15: Controller layer — entry point for the QuantityMeasurementApp.
+    /// UC17: Controller layer — entry point for the QuantityMeasurementApp console.
     ///
-    /// Responsibilities:
-    ///   - Handles user interaction via console.
-    ///   - Accepts input as QuantityDTO objects.
-    ///   - Delegates ALL business logic to IQuantityMeasurementService (no logic here).
-    ///   - Formats and presents results to the user.
-    ///   - Handles and displays QuantityMeasurementException errors.
-    ///
-    /// REST API ready: performXXX methods map directly to POST endpoints:
-    ///   POST /api/quantity/compare
-    ///   POST /api/quantity/convert
-    ///   POST /api/quantity/add
-    ///   POST /api/quantity/subtract
-    ///   POST /api/quantity/divide
+    /// Repository selection menu:
+    ///   1. Cache Repository   — In-Memory list + JSON file
+    ///   2. Redis Repository   — Redis PRIMARY + SQL Server (SSMS) dual-write
     ///
     /// Dependency injection: IQuantityMeasurementService injected via constructor.
     /// Facade pattern: hides service complexity behind simple performXXX methods.
     /// </summary>
     public class QuantityMeasurementController : IQuantityMeasurementApp
     {
-        private readonly IQuantityMeasurementService    _service;
+        private readonly IQuantityMeasurementService          _service;
         private readonly IQuantityMeasurementEntityRepository _repository;
 
         /// <summary>Default constructor — prompts user to select repository, then wires dependencies.</summary>
@@ -44,44 +38,85 @@ namespace QuantityMeasurementApp.Controller
             _service    = new QuantityMeasurementServiceImpl(_repository);
         }
 
-        private static IQuantityMeasurementEntityRepository SelectRepository()
-        {
-            while (true)
-            {
-                Console.WriteLine("SELECT REPOSITORY TYPE");
-                Console.WriteLine("1. Cache Repository (In-Memory + JSON)");
-                Console.WriteLine("2. Database Repository (SQL Server)");
-                Console.Write("Choice: ");
-
-                string? input = Console.ReadLine()?.Trim();
-
-                if (input == "1")
-                    return QuantityMeasurementCacheRepository.Instance;
-
-                if (input == "2")
-                {
-                    var configuration = new ConfigurationBuilder()
-                        .AddJsonFile(
-                            System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "appsettings.json"),
-                            optional: false, reloadOnChange: false)
-                        .Build();
-
-                    return new QuantityMeasurementDatabaseRepository(configuration);
-                }
-
-                Console.WriteLine("Invalid choice. Enter 1 or 2.");
-            }
-        }
-
-                /// <summary>Constructor injection — receives service and repository.</summary>
-        public QuantityMeasurementController(IQuantityMeasurementService    service,
+        /// <summary>Constructor injection — receives service and repository.</summary>
+        public QuantityMeasurementController(IQuantityMeasurementService     service,
                                               IQuantityMeasurementEntityRepository repository)
         {
             _service    = service    ?? throw new ArgumentNullException(nameof(service));
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
-        // MAIN MENU
+        // ── REPOSITORY SELECTION ───────────────────────────────────────────────
+
+        private static IQuantityMeasurementEntityRepository SelectRepository()
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile(
+                    System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json"),
+                    optional: false, reloadOnChange: false)
+                .Build();
+
+            while (true)
+            {
+                Console.WriteLine("\nSELECT REPOSITORY TYPE");
+                Console.WriteLine("1. Cache Repository     (In-Memory + JSON file)");
+                Console.WriteLine("2. Redis Repository     (Redis PRIMARY + SQL Server dual-write)");
+                Console.Write("Choice: ");
+
+                string? input = Console.ReadLine()?.Trim();
+
+                // ── Option 1: In-Memory + JSON file ───────────────────────
+                if (input == "1")
+                {
+                    Console.WriteLine("[INFO] Using In-Memory + JSON cache repository.");
+                    var cacheLogger = LoggerFactory.Create(b => b.AddConsole())
+                        .CreateLogger<CacheRepository>();
+                    return new CacheRepository(cacheLogger);
+                }
+
+                // ── Option 2: Redis PRIMARY + SQL Server (SSMS) dual-write ─
+                if (input == "2")
+                {
+                    string redisConn = configuration["Redis:ConnectionString"] ?? "localhost:6379";
+
+                    Console.WriteLine($"[INFO] Connecting to Redis at {redisConn} ...");
+                    IConnectionMultiplexer mux;
+                    try
+                    {
+                        mux = ConnectionMultiplexer.Connect(redisConn);
+                        Console.WriteLine("[INFO] Redis connected. Every write goes to Redis AND SQL Server (SSMS).");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[ERROR] Cannot connect to Redis ({ex.Message}).");
+                        Console.WriteLine("[FALLBACK] Falling back to In-Memory + JSON cache.");
+                        var fbLogger = LoggerFactory.Create(b => b.AddConsole())
+                            .CreateLogger<CacheRepository>();
+                        return new CacheRepository(fbLogger);
+                    }
+
+                    // SQL Server via EF Core — stored in SSMS
+                    var efOptions = new DbContextOptionsBuilder<QuantityMeasurementDbContext>()
+                        .UseSqlServer(
+                            configuration.GetConnectionString("DefaultConnection")
+                            ?? throw new InvalidOperationException(
+                                "ConnectionStrings:DefaultConnection missing from appsettings.json."))
+                        .Options;
+
+                    var efContext = new QuantityMeasurementDbContext(efOptions);
+                    efContext.Database.Migrate();   // ensure tables exist in SSMS
+
+                    var redisLogger = LoggerFactory.Create(b => b.AddConsole())
+                        .CreateLogger<RedisRepository>();
+
+                    return new RedisRepository(efContext, mux, redisLogger);
+                }
+
+                Console.WriteLine("Invalid choice. Enter 1 or 2.");
+            }
+        }
+
+        // ── MAIN MENU ─────────────────────────────────────────────────────────
 
         public void Run()
         {
@@ -107,12 +142,12 @@ namespace QuantityMeasurementApp.Controller
                     case 4: RunCategoryMenu("TEMPERATURE"); break;
                     case 5: ShowHistory();                  break;
                     case 0: Console.WriteLine("Thank You"); return;
-                    default: Console.WriteLine("Invalid choice. Enter 0–5."); break;
+                    default: Console.WriteLine("Invalid choice. Enter 0-5."); break;
                 }
             }
         }
 
-        // CATEGORY SUB-MENU
+        // ── CATEGORY SUB-MENU ─────────────────────────────────────────────────
 
         private void RunCategoryMenu(string category)
         {
@@ -138,9 +173,8 @@ namespace QuantityMeasurementApp.Controller
             }
         }
 
-        // PERFORM METHODS  (REST API — POST endpoints)
+        // ── PERFORM METHODS ───────────────────────────────────────────────────
 
-        /// <summary>POST /api/quantity/compare</summary>
         public void PerformCompare(string category)
         {
             try
@@ -152,36 +186,28 @@ namespace QuantityMeasurementApp.Controller
                 Console.WriteLine($"That Quantity : {second}");
                 Console.WriteLine($"Comparison Result: {result.MeasurementType}");
             }
-            catch (QuantityMeasurementException ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            catch (QuantityMeasurementException ex) { Console.WriteLine($"Error: {ex.Message}"); }
         }
 
-        /// <summary>POST /api/quantity/convert</summary>
         public void PerformConvert(string category)
         {
             try
             {
                 Console.WriteLine($"\n--- {category} Conversion ---");
-                double val    = ReadDouble("Enter value: ");
+                double val     = ReadDouble("Enter value: ");
                 string srcUnit = ReadUnit(category, "Enter source unit");
                 string tgtUnit = ReadUnit(category, "Enter target unit");
 
-                var input      = new QuantityDTO(val, srcUnit, category);
-                var targetDto  = new QuantityDTO(0,   tgtUnit, category);
+                var input     = new QuantityDTO(val, srcUnit, category);
+                var targetDto = new QuantityDTO(0,   tgtUnit, category);
 
                 QuantityDTO result = _service.Convert(input, targetDto);
                 Console.WriteLine($"This Quantity : {input}");
                 Console.WriteLine($"Conversion Result: {result}");
             }
-            catch (QuantityMeasurementException ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            catch (QuantityMeasurementException ex) { Console.WriteLine($"Error: {ex.Message}"); }
         }
 
-        /// <summary>POST /api/quantity/add</summary>
         public void PerformAdd(string category)
         {
             try
@@ -193,13 +219,9 @@ namespace QuantityMeasurementApp.Controller
                 Console.WriteLine($"That Quantity : {second}");
                 Console.WriteLine($"Addition Result: {result}");
             }
-            catch (QuantityMeasurementException ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            catch (QuantityMeasurementException ex) { Console.WriteLine($"Error: {ex.Message}"); }
         }
 
-        /// <summary>POST /api/quantity/subtract</summary>
         public void PerformSubtract(string category)
         {
             try
@@ -211,13 +233,9 @@ namespace QuantityMeasurementApp.Controller
                 Console.WriteLine($"That Quantity : {second}");
                 Console.WriteLine($"Subtraction Result: {result}");
             }
-            catch (QuantityMeasurementException ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            catch (QuantityMeasurementException ex) { Console.WriteLine($"Error: {ex.Message}"); }
         }
 
-        /// <summary>POST /api/quantity/divide</summary>
         public void PerformDivide(string category)
         {
             try
@@ -229,36 +247,31 @@ namespace QuantityMeasurementApp.Controller
                 Console.WriteLine($"That Quantity : {second}");
                 Console.WriteLine($"Division Result: {result.Value:G} (dimensionless ratio)");
             }
-            catch (QuantityMeasurementException ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            catch (QuantityMeasurementException ex) { Console.WriteLine($"Error: {ex.Message}"); }
         }
 
-        // HISTORY
+        // ── HISTORY ───────────────────────────────────────────────────────────
 
         private void ShowHistory()
         {
             while (true)
             {
                 Console.WriteLine("\n--- Operation History ---");
-                Console.WriteLine("1.View All History");
-                Console.WriteLine("2.View By Operation Type");
-                Console.WriteLine("3.View By Measurement Type");
-                Console.WriteLine("4.View Statistics");
-                Console.WriteLine("0.  Back to Main Menu");
+                Console.WriteLine("1. View All History");
+                Console.WriteLine("2. View By Operation Type");
+                Console.WriteLine("3. View By Measurement Type");
+                Console.WriteLine("4. View Statistics");
+                Console.WriteLine("0. Back to Main Menu");
                 Console.Write("Select Option: ");
 
-                string? input = Console.ReadLine()?.Trim();
-
-                switch (input)
+                switch (Console.ReadLine()?.Trim())
                 {
-                    case "1":  ShowAllHistory();        break;
-                    case "2":  ShowByOperationType();   break;
-                    case "3":  ShowByMeasurementType(); break;
+                    case "1": ShowAllHistory();        break;
+                    case "2": ShowByOperationType();   break;
+                    case "3": ShowByMeasurementType(); break;
                     case "4": ShowStatistics();        break;
-                    case "0":  return;
-                    default:   Console.WriteLine("Invalid option. Enter 7-10 or 0 to go back."); break;
+                    case "0": return;
+                    default:  Console.WriteLine("Invalid option."); break;
                 }
             }
         }
@@ -291,7 +304,6 @@ namespace QuantityMeasurementApp.Controller
             string? measType = Console.ReadLine()?.Trim().ToUpper();
             if (string.IsNullOrEmpty(measType)) { Console.WriteLine("Invalid."); return; }
 
-            // Map category to unit keywords — FirstOperand stores "67 FEET" not "LENGTH"
             string[] keywords = measType switch
             {
                 "LENGTH"      => new[] { "FEET", "INCHES", "YARDS", "CENTIMETERS" },
@@ -315,9 +327,8 @@ namespace QuantityMeasurementApp.Controller
 
         private void ShowStatistics()
         {
-            int total = _repository.GetTotalCount();
-            var all   = _repository.GetAllMeasurements();
-
+            int total    = _repository.GetTotalCount();
+            var all      = _repository.GetAllMeasurements();
             int compare  = _repository.GetMeasurementsByOperationType("COMPARE").Count;
             int convert  = _repository.GetMeasurementsByOperationType("CONVERT").Count;
             int add      = _repository.GetMeasurementsByOperationType("ADD").Count;
@@ -336,7 +347,7 @@ namespace QuantityMeasurementApp.Controller
             Console.WriteLine($"  DIVIDE       : {divide}");
         }
 
-        // INPUT HELPERS
+        // ── INPUT HELPERS ─────────────────────────────────────────────────────
 
         private static (QuantityDTO, QuantityDTO) ReadTwoQuantities(string category)
         {
@@ -344,8 +355,7 @@ namespace QuantityMeasurementApp.Controller
             string u1 = ReadUnit(category, "Enter first unit");
             double v2 = ReadDouble("Enter second value: ");
             string u2 = ReadUnit(category, "Enter second unit");
-            return (new QuantityDTO(v1, u1, category),
-                    new QuantityDTO(v2, u2, category));
+            return (new QuantityDTO(v1, u1, category), new QuantityDTO(v2, u2, category));
         }
 
         private static double ReadDouble(string prompt)
@@ -384,50 +394,23 @@ namespace QuantityMeasurementApp.Controller
             }
         }
 
-        /// <summary>
-        /// Maps short forms and common aliases to the canonical unit names
-        /// expected by ResolveUnit in the service layer.
-        /// </summary>
         private static string NormalizeUnit(string input) => input switch
         {
-            // LENGTH
-            "FT"          => "FEET",
-            "FOOT"        => "FEET",
-            "IN"          => "INCHES",
-            "INCH"        => "INCHES",
-            "YD"          => "YARDS",
-            "YARD"        => "YARDS",
-            "CM"          => "CENTIMETERS",
-            "CENTIMETER"  => "CENTIMETERS",
-
-            // WEIGHT
-            "KG"          => "KILOGRAM",
-            "KILOGRAMS"   => "KILOGRAM",
-            "G"           => "GRAM",
-            "GRAMS"       => "GRAM",
-            "LB"          => "POUND",
-            "LBS"         => "POUND",
-            "POUNDS"      => "POUND",
-
-            // VOLUME
-            "L"           => "LITRE",
-            "LITRES"      => "LITRE",
-            "LITER"       => "LITRE",
-            "LITERS"      => "LITRE",
-            "ML"          => "MILLILITRE",
-            "MILLILITRES" => "MILLILITRE",
-            "MILLILITER"  => "MILLILITRE",
-            "MILLILITERS" => "MILLILITRE",
-            "GAL"         => "GALLON",
-            "GALLONS"     => "GALLON",
-
-            // TEMPERATURE
-            "C"           => "CELSIUS",
-            "F"           => "FAHRENHEIT",
-            "K"           => "KELVIN",
-
-            // Already canonical — pass through unchanged
-            _             => input
+            "FT" or "FOOT"                              => "FEET",
+            "IN" or "INCH"                              => "INCHES",
+            "YD" or "YARD"                              => "YARDS",
+            "CM" or "CENTIMETER"                        => "CENTIMETERS",
+            "KG" or "KILOGRAMS"                         => "KILOGRAM",
+            "G"  or "GRAMS"                             => "GRAM",
+            "LB" or "LBS" or "POUNDS"                   => "POUND",
+            "L"  or "LITRES" or "LITER" or "LITERS"    => "LITRE",
+            "ML" or "MILLILITRES" or "MILLILITER"
+                 or "MILLILITERS"                       => "MILLILITRE",
+            "GAL" or "GALLONS"                          => "GALLON",
+            "C"                                         => "CELSIUS",
+            "F"                                         => "FAHRENHEIT",
+            "K"                                         => "KELVIN",
+            _                                           => input
         };
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using QuantityMeasurementModel.Dto;
+using QuantityMeasurementModel.Dto.Auth;
 using QuantityMeasurementModel.Entities;
 using QuantityMeasurementBusinessLayer.Services.Interface;
 

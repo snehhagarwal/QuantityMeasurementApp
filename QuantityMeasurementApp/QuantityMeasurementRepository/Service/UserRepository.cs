@@ -3,7 +3,7 @@ using QuantityMeasurementModel.Context;
 using QuantityMeasurementModel.Entities;
 using QuantityMeasurementRepository.Interface;
 
-namespace QuantityMeasurementRepository.Implementation
+namespace QuantityMeasurementRepository.Service
 {
     public class UserRepository : IUserRepository
     {

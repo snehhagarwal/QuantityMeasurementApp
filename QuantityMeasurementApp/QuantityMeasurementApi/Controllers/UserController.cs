@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using QuantityMeasurementModel.Dto;
+using QuantityMeasurementModel.Dto.Auth;
 using QuantityMeasurementBusinessLayer.Services.Interface;
 
 namespace QuantityMeasurementApi.Controllers

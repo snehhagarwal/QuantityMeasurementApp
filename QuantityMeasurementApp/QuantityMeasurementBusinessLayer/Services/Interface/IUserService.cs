@@ -1,4 +1,5 @@
 using QuantityMeasurementModel.Dto;
+using QuantityMeasurementModel.Dto.Auth;
 
 namespace QuantityMeasurementBusinessLayer.Services.Interface
 {
