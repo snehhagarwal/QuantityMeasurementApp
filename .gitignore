@@ -1,0 +1,19 @@
+# Build folders
+bin/
+obj/
+
+# Test results
+TestResults/
+
+# VS Code settings
+.vscode/
+
+# User files
+*.user
+*.suo
+
+# Logs
+*.log
+
+# Test files
+*.trx
