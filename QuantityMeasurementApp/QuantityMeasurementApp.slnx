@@ -1,0 +1,11 @@
+<Solution>
+  <!-- UC1–UC16: existing N-Tier console app projects — zero changes -->
+  <Project Path="QuantityMeasurementModel/QuantityMeasurementModel.csproj" />
+  <Project Path="QuantityMeasurementRepository/QuantityMeasurementRepository.csproj" />
+  <Project Path="QuantityMeasurementBusinessLayer/QuantityMeasurementBusinessLayer.csproj" />
+  <Project Path="QuantityMeasurementApp/QuantityMeasurementApp.csproj" />
+  <Project Path="QuantityMeasurementApp.Tests/QuantityMeasurementApp.Tests.csproj" />
+  <!-- UC17: self-contained ASP.NET Core MVC Web API (no references to UC1–UC16) -->
+  <Project Path="QuantityMeasurementApi/QuantityMeasurementApi.csproj" />
+  <Project Path="QuantityMeasurementApi.Tests/QuantityMeasurementApi.Tests.csproj" />
+</Solution>
