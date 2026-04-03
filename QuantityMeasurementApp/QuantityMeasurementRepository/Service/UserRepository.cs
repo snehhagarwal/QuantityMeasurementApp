@@ -12,6 +12,11 @@ namespace QuantityMeasurementRepository.Service
         public UserRepository(QuantityMeasurementDbContext context)
             => _context = context;
 
+        public async Task<User?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+            => await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+
         public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
             => await _context.Users
                 .AsNoTracking()
@@ -27,6 +32,21 @@ namespace QuantityMeasurementRepository.Service
         {
             _context.Users.Add(user);
             await _context.SaveChangesAsync(cancellationToken);
+            return user;
+        }
+
+        public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
+    => await _context.Users.AsNoTracking()
+        .FirstOrDefaultAsync(u => u.Email == email, ct);
+
+        public async Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken ct = default)
+            => await _context.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.GoogleId == googleId, ct);
+
+        public async Task<User> UpdateAsync(User user, CancellationToken ct = default)
+        {
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync(ct);
             return user;
         }
     }
