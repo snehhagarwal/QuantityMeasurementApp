@@ -86,6 +86,10 @@ namespace QuantityMeasurementModel.Entities
         [Column("error_details")]
         public string? ErrorDetails { get; set; }
 
+        // ── Owner ─────────────────────────────────────────────────────────────
+        [Column("user_id")]
+        public long? UserId { get; set; }
+
         // ── Timestamps ────────────────────────────────────────────────────────
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }

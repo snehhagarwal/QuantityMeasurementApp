@@ -116,6 +116,10 @@ namespace QuantityMeasurementRepository.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("updated_at");
 
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt")
@@ -129,6 +133,9 @@ namespace QuantityMeasurementRepository.Migrations
 
                     b.HasIndex("OperationType")
                         .HasDatabaseName("idx_operation_type");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("idx_user_id");
 
                     b.ToTable("quantity_measurements", (string)null);
                 });
@@ -151,6 +158,21 @@ namespace QuantityMeasurementRepository.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("email");
+
+                    b.Property<string>("FullName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("full_name");
+
+                    b.Property<string>("GoogleId")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("google_id");
+
+                    b.Property<string>("PictureUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("picture_url");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -178,6 +200,9 @@ namespace QuantityMeasurementRepository.Migrations
                     b.HasIndex("Email")
                         .IsUnique()
                         .HasDatabaseName("idx_users_email");
+
+                    b.HasIndex("GoogleId")
+                        .HasDatabaseName("idx_users_google_id");
 
                     b.HasIndex("Username")
                         .IsUnique()
