@@ -90,6 +90,19 @@ namespace QuantityMeasurementRepository.Service
             return list.AsReadOnly();
         }
 
+        public async Task<IReadOnlyList<QuantityMeasurement>> FindAllByUserAsync(
+            long userId,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug("FindAllByUser({UserId}) → SQL Server.", userId);
+            var list = await _db.Measurements
+                .AsNoTracking()
+                .Where(e => e.UserId == userId)
+                .OrderByDescending(e => e.CreatedAt)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+            return list.AsReadOnly();
+        }
+
         // ── FIND BY OPERATION TYPE ─────────────────────────────────────────────
 
         public async Task<IReadOnlyList<QuantityMeasurement>> FindByOperationTypeAsync(
@@ -112,6 +125,21 @@ namespace QuantityMeasurementRepository.Service
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
             await RedisSetListAsync(redisKey, list).ConfigureAwait(false);
+            return list.AsReadOnly();
+        }
+
+        public async Task<IReadOnlyList<QuantityMeasurement>> FindByOperationTypeAndUserAsync(
+            string operationType,
+            long userId,
+            CancellationToken cancellationToken = default)
+        {
+            var upper = operationType.ToUpperInvariant();
+            _logger.LogDebug("FindByOperationTypeAndUser({Op}, {UserId}) → SQL Server.", upper, userId);
+            var list = await _db.Measurements
+                .AsNoTracking()
+                .Where(e => e.OperationType == upper && e.UserId == userId)
+                .OrderByDescending(e => e.CreatedAt)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
             return list.AsReadOnly();
         }
 
@@ -173,6 +201,34 @@ namespace QuantityMeasurementRepository.Service
                 .ToListAsync(cancellationToken).ConfigureAwait(false);
             await RedisSetListAsync(KeyErrors, list).ConfigureAwait(false);
             return list.AsReadOnly();
+        }
+
+        public async Task<IReadOnlyList<QuantityMeasurement>> FindByIsErrorTrueAndUserAsync(
+            long userId,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug("FindByIsErrorTrueAndUser({UserId}) → SQL Server.", userId);
+            var list = await _db.Measurements
+                .AsNoTracking()
+                .Where(e => !e.IsSuccessful && e.UserId == userId)
+                .OrderByDescending(e => e.CreatedAt)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+            return list.AsReadOnly();
+        }
+
+        // ── DELETE ALL BY USER ─────────────────────────────────────────────────
+
+        public async Task<int> DeleteAllByUserAsync(long userId, CancellationToken cancellationToken = default)
+        {
+            var records = await _db.Measurements
+                .Where(e => e.UserId == userId)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+            _db.Measurements.RemoveRange(records);
+            var deleted = await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation("DeleteAllByUser({UserId}): deleted {N} records.", userId, deleted);
+            // Invalidate all redis keys
+            await InvalidateAllRedisAsync().ConfigureAwait(false);
+            return deleted;
         }
 
         // ── COUNT BY OPERATION ─────────────────────────────────────────────────
@@ -283,6 +339,24 @@ namespace QuantityMeasurementRepository.Service
                 _logger.LogDebug("Redis SET {Key} TTL={Ttl}.", key, Ttl);
             }
             catch (System.Exception ex) { _logger.LogWarning(ex, "Redis SET failed for key {Key}.", key); }
+        }
+
+        private async Task InvalidateAllRedisAsync()
+        {
+            if (_redis is null) return;
+            try
+            {
+                var db = _redis.GetDatabase();
+                var server = _redis.GetServer(_redis.GetEndPoints()[0]);
+                var keys = server.Keys(pattern: Prefix + "*").ToArray();
+                if (keys.Length > 0)
+                    await db.KeyDeleteAsync(keys).ConfigureAwait(false);
+                _logger.LogInformation("Redis: invalidated all {N} qm:repo: keys.", keys.Length);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogWarning(ex, "Redis full invalidation failed — data is safe in SQL Server.");
+            }
         }
 
         /// <summary>

@@ -23,6 +23,7 @@ namespace QuantityMeasurementModel.Context
                 e.HasIndex(m => m.FirstOperandCategory).HasDatabaseName("idx_measurement_type");
                 e.HasIndex(m => m.CreatedAt).HasDatabaseName("idx_created_at");
                 e.HasIndex(m => m.IsSuccessful).HasDatabaseName("idx_is_successful");
+                e.HasIndex(m => m.UserId).HasDatabaseName("idx_user_id");
             });
 
             modelBuilder.Entity<User>(e =>

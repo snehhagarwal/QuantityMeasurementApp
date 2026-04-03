@@ -46,5 +46,17 @@ namespace QuantityMeasurementModel.Entities
 
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        [MaxLength(255)]
+        [Column("google_id")]
+        public string? GoogleId { get; set; }
+
+        [MaxLength(200)]
+        [Column("full_name")]
+        public string? FullName { get; set; }
+
+        [MaxLength(1000)]
+        [Column("picture_url")]
+        public string? PictureUrl { get; set; }
     }
 }
