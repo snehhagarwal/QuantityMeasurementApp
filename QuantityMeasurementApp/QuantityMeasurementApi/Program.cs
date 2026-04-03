@@ -91,6 +91,7 @@ else
 }
 
 // ── Shared services ────────────────────────────────────────────────────────
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IQuantityMeasurementService, QuantityMeasurementService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
@@ -110,8 +111,7 @@ var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
-// Run EF migrations for SQL Server modes
-if (useRedis)
+// Run EF migrations for ALL SQL Server modes (Redis and Cache)
 {
     await using var scope = app.Services.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<QuantityMeasurementDbContext>();
