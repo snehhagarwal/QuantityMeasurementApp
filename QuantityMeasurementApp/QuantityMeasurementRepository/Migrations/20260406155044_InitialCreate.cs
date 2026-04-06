@@ -33,6 +33,7 @@ namespace QuantityMeasurementRepository.Migrations
                     formatted_result = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     is_successful = table.Column<bool>(type: "bit", nullable: false),
                     error_details = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    user_id = table.Column<long>(type: "bigint", nullable: true),
                     created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
                     updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -52,7 +53,10 @@ namespace QuantityMeasurementRepository.Migrations
                     password_hash = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     role = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    google_id = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    full_name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    picture_url = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -78,6 +82,11 @@ namespace QuantityMeasurementRepository.Migrations
                 name: "idx_operation_type",
                 table: "quantity_measurements",
                 column: "operation_type");
+
+            migrationBuilder.CreateIndex(
+                name: "idx_user_id",
+                table: "quantity_measurements",
+                column: "user_id");
 
             migrationBuilder.CreateIndex(
                 name: "idx_users_email",

@@ -12,7 +12,7 @@ using QuantityMeasurementModel.Context;
 namespace QuantityMeasurementRepository.Migrations
 {
     [DbContext(typeof(QuantityMeasurementDbContext))]
-    [Migration("20260322170231_InitialCreate")]
+    [Migration("20260406155044_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -119,6 +119,10 @@ namespace QuantityMeasurementRepository.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("updated_at");
 
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt")
@@ -132,6 +136,9 @@ namespace QuantityMeasurementRepository.Migrations
 
                     b.HasIndex("OperationType")
                         .HasDatabaseName("idx_operation_type");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("idx_user_id");
 
                     b.ToTable("quantity_measurements", (string)null);
                 });
@@ -155,10 +162,25 @@ namespace QuantityMeasurementRepository.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("email");
 
+                    b.Property<string>("FullName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("full_name");
+
+                    b.Property<string>("GoogleId")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("google_id");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("password_hash");
+
+                    b.Property<string>("PictureUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("picture_url");
 
                     b.Property<string>("Role")
                         .IsRequired()
