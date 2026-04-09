@@ -34,9 +34,15 @@ if (useRedis)
         else
         {
             // Default: SQL Server stored in SSMS
-            options.UseSqlServer(
-                config.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly("QuantityMeasurementRepository"));
+           var useDb = config["UseDatabase"] ?? "SqlServer";
+if (useDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+    options.UseNpgsql(
+        config.GetConnectionString("DefaultConnection"),
+        b => b.MigrationsAssembly("QuantityMeasurementRepository"));
+else
+    options.UseSqlServer(
+        config.GetConnectionString("DefaultConnection"),
+        b => b.MigrationsAssembly("QuantityMeasurementRepository"));
         }
     });
 
@@ -67,14 +73,15 @@ else
         var config = sp.GetRequiredService<IConfiguration>();
         var connStr = config.GetConnectionString("DefaultConnection");
         if (!string.IsNullOrWhiteSpace(connStr))
-        {
-            options.UseSqlServer(connStr,
-                b => b.MigrationsAssembly("QuantityMeasurementRepository"));
-        }
-        else
-        {
-            options.UseInMemoryDatabase("quantity_measurement_cache_inmemory");
-        }
+{
+    var useDb = config["UseDatabase"] ?? "SqlServer";
+    if (useDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+        options.UseNpgsql(connStr,
+            b => b.MigrationsAssembly("QuantityMeasurementRepository"));
+    else
+        options.UseSqlServer(connStr,
+            b => b.MigrationsAssembly("QuantityMeasurementRepository"));
+}
     });
 
     builder.Services.AddScoped<IUserRepository, EfUserRepository>();

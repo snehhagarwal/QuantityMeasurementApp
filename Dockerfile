@@ -6,7 +6,7 @@ COPY . .
 
 # Restore and publish — path matches your actual structure:
 # repo root → QuantityMeasurementApp → QuantityMeasurementApi
-RUN dotnet publish QuantityMeasurementApp/QuantityMeasurementApi/QuantityMeasurementApi.csproj \
+RUN dotnet publish QuantityMeasurementApi/QuantityMeasurementApi.csproj \
     -c Release \
     -o /app/out
 
