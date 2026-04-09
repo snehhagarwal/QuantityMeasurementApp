@@ -1,7 +1,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
+
+# Copy everything
 COPY . .
-RUN dotnet publish QuantityMeasurementApp/QuantityMeasurementApi/QuantityMeasurementApi.csproj -c Release -o /app/out
+
+# Restore and publish — path matches your actual structure:
+# repo root → QuantityMeasurementApp → QuantityMeasurementApi
+RUN dotnet publish QuantityMeasurementApp/QuantityMeasurementApi/QuantityMeasurementApi.csproj \
+    -c Release \
+    -o /app/out
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
