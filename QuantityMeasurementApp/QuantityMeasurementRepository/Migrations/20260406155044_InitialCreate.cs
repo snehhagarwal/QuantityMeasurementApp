@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -16,26 +17,26 @@ namespace QuantityMeasurementRepository.Migrations
                 columns: table => new
                 {
                     id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    operation_type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    first_operand_value = table.Column<double>(type: "float", nullable: true),
-                    first_operand_unit = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    first_operand_category = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    first_operand_display = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    second_operand_value = table.Column<double>(type: "float", nullable: true),
-                    second_operand_unit = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    second_operand_category = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    second_operand_display = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    target_unit = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    result_value = table.Column<double>(type: "float", nullable: true),
-                    result_unit = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    result_measurement_type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    formatted_result = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    is_successful = table.Column<bool>(type: "bit", nullable: false),
-                    error_details = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    operation_type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    first_operand_value = table.Column<double>(type: "double precision", nullable: true),
+                    first_operand_unit = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    first_operand_category = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    first_operand_display = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    second_operand_value = table.Column<double>(type: "double precision", nullable: true),
+                    second_operand_unit = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    second_operand_category = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    second_operand_display = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    target_unit = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    result_value = table.Column<double>(type: "double precision", nullable: true),
+                    result_unit = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    result_measurement_type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    formatted_result = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    is_successful = table.Column<bool>(type: "boolean", nullable: false),
+                    error_details = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     user_id = table.Column<long>(type: "bigint", nullable: true),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -47,16 +48,16 @@ namespace QuantityMeasurementRepository.Migrations
                 columns: table => new
                 {
                     id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    username = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    password_hash = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    role = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    google_id = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    full_name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    picture_url = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    username = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    password_hash = table.Column<string>(type: "text", nullable: false),
+                    role = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    google_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    full_name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    picture_url = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
