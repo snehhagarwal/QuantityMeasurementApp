@@ -34,8 +34,8 @@ if (useRedis)
         else
         {
             // Default: SQL Server stored in SSMS
-           var useDb = config["UseDatabase"] ?? "SqlServer";
-if (useDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+           var useeDb = config["UseDatabase"] ?? "SqlServer";
+if (useeDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
     options.UseNpgsql(
         config.GetConnectionString("DefaultConnection"),
         b => b.MigrationsAssembly("QuantityMeasurementRepository"));
@@ -74,8 +74,8 @@ else
         var connStr = config.GetConnectionString("DefaultConnection");
         if (!string.IsNullOrWhiteSpace(connStr))
 {
-    var useDb = config["UseDatabase"] ?? "SqlServer";
-    if (useDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+    var useeDb = config["UseDatabase"] ?? "SqlServer";
+    if (useeDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
         options.UseNpgsql(connStr,
             b => b.MigrationsAssembly("QuantityMeasurementRepository"));
     else
