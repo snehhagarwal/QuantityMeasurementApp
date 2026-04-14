@@ -7,7 +7,7 @@ using QuantityMeasurementRepository.Interface;
 using QuantityMeasurementRepository.Repository;
 using QuantityMeasurementModel.Interface;
 using EfQuantityRepository = QuantityMeasurementRepository.Service.QuantityMeasurementRepository;
-using EfUserRepository     = QuantityMeasurementRepository.Service.UserRepository;
+using EfUserRepository = QuantityMeasurementRepository.Service.UserRepository;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +16,7 @@ builder.Services.AddControllers();
 
 // ── Determine repository type from configuration ───────────────────────────
 var repoType = builder.Configuration["RepositoryType"] ?? "Cache";
-var useRedis  = repoType.Equals("Redis", StringComparison.OrdinalIgnoreCase);
+var useRedis = repoType.Equals("Redis", StringComparison.OrdinalIgnoreCase);
 
 // ── Database (SQL Server via EF Core) — required only for Redis mode ────────
 if (useRedis)
@@ -24,7 +24,7 @@ if (useRedis)
     builder.Services.AddDbContext<QuantityMeasurementDbContext>((sp, options) =>
     {
         var config = sp.GetRequiredService<IConfiguration>();
-        var useDb  = config["UseDatabase"] ?? "SqlServer";
+        var useDb = config["UseDatabase"] ?? "SqlServer";
 
         if (useDb.Equals("InMemory", StringComparison.OrdinalIgnoreCase))
         {
@@ -34,15 +34,15 @@ if (useRedis)
         else
         {
             // Default: SQL Server stored in SSMS
-           var useeDb = config["UseDatabase"] ?? "SqlServer";
-if (useeDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
-    options.UseNpgsql(
-        config.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("QuantityMeasurementRepository"));
-else
-    options.UseSqlServer(
-        config.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("QuantityMeasurementRepository"));
+            var useeDb = config["UseDatabase"] ?? "SqlServer";
+            if (useeDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+                options.UseNpgsql(
+                    config.GetConnectionString("DefaultConnection"),
+                    b => b.MigrationsAssembly("QuantityMeasurementRepository"));
+            else
+                options.UseSqlServer(
+                    config.GetConnectionString("DefaultConnection"),
+                    b => b.MigrationsAssembly("QuantityMeasurementRepository"));
         }
     });
 
@@ -73,15 +73,15 @@ else
         var config = sp.GetRequiredService<IConfiguration>();
         var connStr = config.GetConnectionString("DefaultConnection");
         if (!string.IsNullOrWhiteSpace(connStr))
-{
-    var useeDb = config["UseDatabase"] ?? "SqlServer";
-    if (useeDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
-        options.UseNpgsql(connStr,
-            b => b.MigrationsAssembly("QuantityMeasurementRepository"));
-    else
-        options.UseSqlServer(connStr,
-            b => b.MigrationsAssembly("QuantityMeasurementRepository"));
-}
+        {
+            var useeDb = config["UseDatabase"] ?? "SqlServer";
+            if (useeDb.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+                options.UseNpgsql(connStr,
+                    b => b.MigrationsAssembly("QuantityMeasurementRepository"));
+            else
+                options.UseSqlServer(connStr,
+                    b => b.MigrationsAssembly("QuantityMeasurementRepository"));
+        }
     });
 
     builder.Services.AddScoped<IUserRepository, EfUserRepository>();
@@ -131,15 +131,12 @@ app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
     }
 }
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Quantity Measurement API v1");
-        c.RoutePrefix = "swagger-ui";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Quantity Measurement API v1");
+    c.RoutePrefix = "swagger";   
+});
 
 app.UseCors(ApiSecurityExtensions.AllowAllPolicy);
 app.UseAuthentication();
